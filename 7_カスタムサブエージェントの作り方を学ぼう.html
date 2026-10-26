@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2-3 カスタムサブエージェントを定義する - Udemy講座スライド</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CSS Reset & Variables --- */
+        :root {
+            --primary-color: #FFD600;    /* メイン黄色 */
+            --secondary-color: #25BAE9;  /* サブ青色 */
+            --text-black: #333333;       /* メインテキスト */
+            --background-gray: #EFF3F4;  /* 背景グレー */
+            --white: #FFFFFF;            /* 白背景・テキスト */
+            --text-gray: #555555;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --card-shadow: 0 8px 30px rgba(0,0,0,0.04);
+            --transition-speed: 0.4s;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #111111;
+            color: var(--text-black);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- 16:9 Aspect Ratio Slide Container --- */
+        .slide-container {
+            width: 90vw;
+            height: 50.625vw; /* 9/16 * 90vw */
+            max-width: 1600px;
+            max-height: 900px;
+            position: relative;
+            background-color: var(--white);
+            box-shadow: 0 25px 70px rgba(0,0,0,0.6);
+            border-radius: 12px;
+            overflow: hidden;
+            container-type: size;
+            container-name: slide;
+        }
+
+        /* Vertical viewport adjustments */
+        @media (max-aspect-ratio: 16/9) {
+            .slide-container {
+                width: 177.78vh; /* 16/9 * 90vh */
+                height: 90vh;
+            }
+        }
+
+        /* --- Individual Slide Wrapper --- */
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition-speed) cubic-bezier(0.25, 1, 0.5, 1);
+            background-color: var(--white);
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 2;
+        }
+
+        /* Theme Styling options */
+        .slide.theme-blue {
+            background-color: var(--white);
+        }
+
+        .slide.theme-yellow {
+            background-color: var(--background-gray);
+        }
+
+        /* --- Title Area (Header 15%) --- */
+        .title-area {
+            height: 15cqh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 4cqw;
+            position: relative;
+        }
+
+        .slide.theme-yellow .title-area {
+            background-color: var(--primary-color);
+        }
+
+        .slide.theme-blue .title-area {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .title-area h2 {
+            margin: 0;
+            font-size: 2.8cqw;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 1.5cqw;
+        }
+
+        .title-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05cqw;
+            font-weight: 800;
+            background-color: rgba(255, 255, 255, 0.35);
+            color: inherit;
+            padding: 0.4cqh 1.2cqw;
+            border-radius: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .slide.theme-yellow .title-badge {
+            background-color: rgba(0, 0, 0, 0.08);
+            color: var(--text-black);
+        }
+
+        /* --- Main Content Area --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            padding: 4cqh 4cqw 6cqh 4cqw;
+            gap: 4cqw;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 3cqh;
+        }
+
+        .right-panel {
+            width: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Bullet Points */
+        .points-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 3cqh;
+        }
+
+        .points-list li {
+            position: relative;
+            padding-left: 2.5cqw;
+        }
+
+        .points-list li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0.7cqh;
+            width: 1.2cqw;
+            height: 1.2cqw;
+            border-radius: 50%;
+        }
+
+        .slide.theme-yellow .points-list li::before {
+            background-color: var(--secondary-color);
+        }
+
+        .slide.theme-blue .points-list li::before {
+            background-color: var(--primary-color);
+        }
+
+        .point-title {
+            font-size: 1.45cqw;
+            font-weight: 700;
+            color: #111111;
+            margin-bottom: 0.6cqh;
+        }
+
+        .point-desc {
+            font-size: 1.05cqw;
+            color: var(--text-gray);
+            line-height: 1.55;
+            margin: 0;
+        }
+
+        /* --- Navigation Counter Floating (Standard Capsule Style) --- */
+        .nav-info {
+            position: absolute;
+            bottom: 20px;
+            left: 5%;
+            right: 5%;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            font-size: 0.95rem;
+            color: #888;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .slide-counter {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .slide.theme-blue .slide-counter {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .slide.theme-yellow .slide-counter {
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        /* ==========================================================================
+           SLIDE-SPECIFIC CUSTOM DIAGRAM STYLES
+           ========================================================================== */
+
+        /* --- Slide 1 Diagram: File Structure --- */
+        .diagram-s1 {
+            width: 90%;
+            background: rgba(255,255,255,0.8);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 85%;
+        }
+        .s1-header {
+            background: #e2e8f0;
+            padding: 1.2cqh 1.5cqw;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1cqw;
+            font-weight: 700;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 0.8cqw;
+        }
+        .s1-yaml-part {
+            background: #f8fafc;
+            padding: 2cqh 2cqw;
+            border-bottom: 2px dashed #cbd5e1;
+            font-family: 'Outfit', monospace;
+            font-size: 0.9cqw;
+            color: #475569;
+            position: relative;
+        }
+        .s1-prompt-part {
+            background: var(--white);
+            padding: 2.5cqh 2cqw;
+            font-size: 0.95cqw;
+            color: var(--text-gray);
+            flex: 1;
+            position: relative;
+        }
+        .s1-badge {
+            position: absolute;
+            top: 1.5cqh;
+            right: 2cqw;
+            font-size: 0.75cqw;
+            font-weight: 800;
+            background: #cbd5e1;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #475569;
+        }
+        .s1-badge.green {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        /* --- Slide 2 Diagram: Scopes & Priority --- */
+        .diagram-s2 {
+            display: flex;
+            flex-direction: column;
+            gap: 2cqh;
+            width: 100%;
+            height: 90%;
+            justify-content: center;
+            align-items: center;
+        }
+        .s2-card {
+            width: 90%;
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2.2cqh 2.2cqw;
+            box-shadow: var(--card-shadow);
+            position: relative;
+        }
+        .s2-card.priority {
+            border: 2px solid var(--secondary-color);
+            background: #f0fafd;
+        }
+        .s2-card-badge {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 0.85cqw;
+            padding: 2px 10px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 1cqh;
+        }
+        .s2-card-badge.user { background: #e2e8f0; color: #475569; }
+        .s2-card-badge.project { background: var(--secondary-color); color: var(--white); }
+        .s2-card-path {
+            font-family: 'Outfit', monospace;
+            font-size: 1.15cqw;
+            font-weight: 700;
+            color: var(--text-black);
+            margin-bottom: 0.5cqh;
+        }
+        .s2-card-desc {
+            font-size: 0.9cqw;
+            color: var(--text-gray);
+        }
+        .s2-arrow {
+            font-size: 1.5cqw;
+            color: var(--secondary-color);
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: 0.5cqw;
+        }
+
+        /* --- Slide 3 Diagram: YAML Editor --- */
+        .diagram-s3 {
+            width: 95%;
+            height: 85%;
+            background: #1e1e1e; /* VS Code風ダーク背景 */
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Outfit', 'Fira Code', 'Courier New', Courier, monospace;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .s3-editor-header {
+            background: #2d2d2d;
+            height: 4.5cqh;
+            padding: 0 1.5cqw;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #252526;
+        }
+        .s3-editor-buttons {
+            display: flex;
+            gap: 6px;
+        }
+        .s3-editor-btn {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        .s3-editor-btn.red { background: #ff5f56; }
+        .s3-editor-btn.yellow { background: #ffbd2e; }
+        .s3-editor-btn.green { background: #27c93f; }
+        
+        .s3-editor-title {
+            color: #858585;
+            font-size: 0.85cqw;
+            font-weight: 500;
+        }
+        
+        .s3-editor-content {
+            flex: 1;
+            padding: 3cqh 2.5cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            gap: 1.2cqh;
+            position: relative;
+            line-height: 1.6;
+        }
+        
+        .s3-code-line {
+            display: flex;
+            font-size: 1.05cqw;
+            white-space: pre-wrap;
+            position: relative;
+        }
+        .s3-code-line.indent {
+            padding-left: 2cqw;
+        }
+        
+        .s3-code-line.highlight-line-comment {
+            background: rgba(255, 214, 0, 0.12);
+            border-left: 4px solid var(--primary-color);
+            padding-left: calc(1.5cqw - 4px);
+            border-radius: 4px 4px 0 0;
+            margin-top: 0.5cqh;
+            padding-top: 0.5cqh;
+            padding-bottom: 0.2cqh;
+            width: 100%;
+        }
+        
+        .s3-code-line.highlight-line {
+            background: rgba(255, 214, 0, 0.12);
+            border-left: 4px solid var(--primary-color);
+            padding-left: calc(1.5cqw - 4px);
+            border-radius: 0 0 4px 4px;
+            margin-bottom: 0.5cqh;
+            padding-top: 0.2cqh;
+            padding-bottom: 0.5cqh;
+            width: 100%;
+        }
+        
+        .yaml-dash { color: #6a9955; font-weight: bold; } /* YAMLデリミタ */
+        .yaml-key { color: #9cdcfe; } /* キー：水色 */
+        .yaml-val-str { color: #ce9178; word-break: break-all; } /* 値（文字列）：オレンジ・茶色 */
+        .yaml-colon { color: #d4d4d4; margin-right: 0.5cqw; }
+        .yaml-comment { color: #6a9955; font-style: italic; } /* コメント：緑色 */
+
+        /* --- Slide 4 Diagram: Options Grid --- */
+        .diagram-s4 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2cqw;
+            width: 100%;
+            height: 80%;
+        }
+        .s4-card {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2cqh 1.8cqw;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 0.8cqh;
+        }
+        .s4-icon {
+            font-size: 2cqw;
+        }
+        .s4-title {
+            font-family: 'Outfit', monospace;
+            font-size: 1.1cqw;
+            font-weight: 800;
+            color: var(--text-black);
+        }
+        .s4-desc {
+            font-size: 0.85cqw;
+            color: var(--text-gray);
+            line-height: 1.4;
+        }
+
+        /* --- Slide 5 Diagram: Auto Generation --- */
+        .diagram-s5 {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 90%;
+            justify-content: center;
+            align-items: center;
+            gap: 1cqh;
+        }
+        .s5-step {
+            width: 90%;
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.8cqh 2cqw;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            align-items: center;
+            gap: 1.5cqw;
+        }
+        .s5-step.active {
+            border-left: 5px solid var(--primary-color);
+        }
+        .s5-icon-box {
+            font-size: 2cqw;
+            width: 4cqw;
+            height: 4cqw;
+            background: #fffde7;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .s5-step.active .s5-icon-box {
+            background: #fff9c4;
+        }
+        .s5-step-text {
+            flex: 1;
+        }
+        .s5-step-title {
+            font-size: 1.1cqw;
+            font-weight: 800;
+            margin-bottom: 0.3cqh;
+        }
+        .s5-step-desc {
+            font-size: 0.85cqw;
+            color: var(--text-gray);
+        }
+        .s5-arrow {
+            font-size: 1.2cqw;
+            color: #cbd5e1;
+        }
+
+        /* --- Slide 6 Diagram: Best Practice Summary --- */
+        .diagram-s6 {
+            width: 90%;
+            height: 85%;
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            padding: 3.5cqh 3cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+        .s6-bp-row {
+            display: flex;
+            gap: 2cqw;
+            align-items: flex-start;
+        }
+        .s6-bp-icon {
+            font-size: 2.2cqw;
+            background: #fffde7;
+            padding: 1.2cqh;
+            border-radius: 12px;
+        }
+        .s6-bp-row:nth-child(2) .s6-bp-icon {
+            background: #e3f2fd;
+        }
+        .s6-bp-title-text {
+            font-size: 1.2cqw;
+            font-weight: 800;
+            color: var(--text-black);
+            margin-bottom: 0.6cqh;
+        }
+        .s6-bp-desc-text {
+            font-size: 0.95cqw;
+            color: var(--text-gray);
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="slide-container">
+
+        <!-- ==================== SLIDE 1: INTRO ==================== -->
+        <div class="slide slide1 active theme-yellow" id="slide1">
+            <div class="title-area">
+                <h2><span class="title-badge">OVERVIEW</span>カスタムサブエージェントとは？</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">自分たち専用の「専門家」を定義</div>
+                            <div class="point-desc">汎用的な組み込みエージェントの枠を超え、チームのコーディング規約や独自のデプロイフローに最適化したエージェントを作れます。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">シンプルな1ファイル構成</div>
+                            <div class="point-desc">設定情報となる「YAMLフロントマター」と、指示文である「システムプロンプト (Markdown)」の2つを1ファイルにまとめて定義します。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">チーム間での共有が可能</div>
+                            <div class="point-desc">Gitリポジトリに含めて共有することで、すべての開発メンバーが同じカスタムエージェントを手軽に利用できます。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s1">
+                        <div class="s1-header">
+                            📄 code-reviewer.md
+                        </div>
+                        <div class="s1-yaml-part">
+                            <span class="s1-badge">YAML 設定</span>
+                            ---<br>
+                            name: code-reviewer<br>
+                            description: チーム規約をレビューするエージェント...<br>
+                            tools: [Read, Grep]<br>
+                            ---
+                        </div>
+                        <div class="s1-prompt-part">
+                            <span class="s1-badge green">System Prompt (指示本文)</span>
+                            # Role<br>
+                            あなたは型安全とアクセシビリティの専門レビュアーです。以下の手順に従ってレビューを実施してください...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 2: SCOPE ==================== -->
+        <div class="slide slide2 theme-blue" id="slide2">
+            <div class="title-area">
+                <h2><span class="title-badge">SCOPE</span>2つの保存場所（スコープ）</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">プロジェクトスコープ (チーム共有向き)</div>
+                            <div class="point-desc">`.claude/agents/` に保存します。そのプロジェクト内でのみ有効で、コードベース固有の規約レビュー等に活用しGitで共有するのがベストです。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">ユーザースコープ (個人利用向き)</div>
+                            <div class="point-desc">`~/.claude/agents/` に保存します。個人のPC上のすべてのプロジェクトから呼び出せる、自分専用の汎用アシスタントになります。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">同名時の優先順位（プロジェクト最優先）</div>
+                            <div class="point-desc">同じ名前のサブエージェントが両方に定義されている場合、プロジェクトスコープ側が優先して読み込まれます。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s2">
+                        <div class="s2-card">
+                            <div class="s2-card-badge user">USER SCOPE</div>
+                            <div class="s2-card-path">~/.claude/agents/</div>
+                            <div class="s2-card-desc">個人PC内の全リポジトリで動作するアシスタント</div>
+                        </div>
+                        <div class="s2-arrow">
+                            ⬇️ 同名時は上書き（プロジェクト優先）
+                        </div>
+                        <div class="s2-card priority">
+                            <div class="s2-card-badge project">PROJECT SCOPE</div>
+                            <div class="s2-card-path">.claude/agents/</div>
+                            <div class="s2-card-desc">特定のリポジトリ内でのみ動作（Gitチーム共有）</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 3: METADATA ==================== -->
+        <div class="slide slide3 theme-blue" id="slide3">
+            <div class="title-area">
+                <h2><span class="title-badge">SETTINGS</span>YAMLフロントマターと必須項目</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">履歴書の「プロフィール欄」</div>
+                            <div class="point-desc">ファイルの先頭に `---` で挟んで記述する設定です。Claude Codeが本文（システムプロンプト）を読む前に確認する基本情報です。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">name (必須)：一意の識別子</div>
+                            <div class="point-desc">小文字とハイフンで記述します。エージェントをチャットから直接呼び出すときのコマンド名（ID）として使われます。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">description (必須・最重要)：自律委譲の鍵</div>
+                            <div class="point-desc">この説明文を読んで、Claude自身が「現在のタスクをこのエージェントに任せるべきか」を自律的に判断します。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s3">
+                        <div class="s3-editor-header">
+                            <div class="s3-editor-buttons">
+                                <span class="s3-editor-btn red"></span>
+                                <span class="s3-editor-btn yellow"></span>
+                                <span class="s3-editor-btn green"></span>
+                            </div>
+                            <div class="s3-editor-title">code-reviewer.md</div>
+                            <div style="width: 42px;"></div>
+                        </div>
+                        <div class="s3-editor-content">
+                            <div class="s3-code-line"><span class="yaml-dash">---</span></div>
+                            <div class="s3-code-line"><span class="yaml-key">name</span><span class="yaml-colon">:</span><span class="yaml-val-str">code-reviewer</span></div>
+                            <div class="s3-code-line highlight-line-comment">
+                                <span class="yaml-comment"># 🔑 最重要！この説明でAIが自動委譲を判断する</span>
+                            </div>
+                            <div class="s3-code-line highlight-line">
+                                <span class="yaml-key">description</span><span class="yaml-colon">:</span><span class="yaml-val-str">"コードの型安全性とアクセシビリティをチェックするための説明文。AIが「自動委譲」するかの判断に直結します。"</span>
+                            </div>
+                            <div class="s3-code-line"><span class="yaml-dash">---</span></div>
+                            <div class="s3-code-line" style="color: #6a9955; margin-top: 1cqh; font-style: italic;"># ここからシステムプロンプト (Markdown本文)...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 4: OPTIONS ==================== -->
+        <div class="slide slide4 theme-blue" id="slide4">
+            <div class="title-area">
+                <h2><span class="title-badge">OPTIONS</span>動作を制御する便利なオプション設定</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">tools / disallowedTools</div>
+                            <div class="point-desc">利用可能なツールを制限し、読み取りのみを許可するなどの安全なサンドボックス（制限環境）を構築できます。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">permissionMode</div>
+                            <div class="point-desc">`acceptEdits`や`plan`といった承認確認モードを指定し、自律変更のルールを定めます。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">maxTurns / model</div>
+                            <div class="point-desc">最大ループ回数を制限して暴走を防いだり、`haiku`や`opus`など用途に応じてコストと推論性能を最適化できます（省略時は親を継承）。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s4">
+                        <div class="s4-card">
+                            <span class="s4-icon">🛠️</span>
+                            <div class="s4-title">tools 制限</div>
+                            <div class="s4-desc">Read, Grepなどのみの権限に絞り、破壊的変更を防ぐ</div>
+                        </div>
+                        <div class="s4-card">
+                            <span class="s4-icon">🛡️</span>
+                            <div class="s4-title">permissionMode</div>
+                            <div class="s4-desc">自動書き込みの承認モードをコントロール</div>
+                        </div>
+                        <div class="s4-card">
+                            <span class="s4-icon">🔄</span>
+                            <div class="s4-title">maxTurns</div>
+                            <div class="s4-desc">自律実行回数に天井を設定し、無限ループを抑止</div>
+                        </div>
+                        <div class="s4-card">
+                            <span class="s4-icon">🧠</span>
+                            <div class="s4-title">model 指定</div>
+                            <div class="s4-desc">コスト優先なら haiku、高度推論なら opus などを選択</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 5: CREATION ==================== -->
+        <div class="slide slide5 theme-yellow" id="slide5">
+            <div class="title-area">
+                <h2><span class="title-badge">CREATION</span>一番楽な作り方：Claudeに指示する</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">手動でのフォルダ・ファイル作成は不要</div>
+                            <div class="point-desc">MarkdownやYAMLの書式、パスなどを覚える必要はありません。Claude Codeに指示をするだけで完成します。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">言葉で役割を伝えるだけ</div>
+                            <div class="point-desc">「アクセシビリティをチェックする読み取り専用のレビュアーを `.claude/agents/code-reviewer.md` に作って」と指示します。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">自動でYAMLとプロンプトを生成・保存</div>
+                            <div class="point-desc">適切な `description` や `tools` 制限をClaude自身が設計し、そのまま所定の位置へ自動保存してくれます。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s5">
+                        <div class="s5-step active">
+                            <div class="s5-icon-box">👤</div>
+                            <div class="s5-step-text">
+                                <div class="s5-step-title">1. 作成の指示</div>
+                                <div class="s5-step-desc">「〇〇のエージェントを特定のパスに作って」と会話で指示</div>
+                            </div>
+                        </div>
+                        <div class="s5-arrow">⬇️</div>
+                        <div class="s5-step">
+                            <div class="s5-icon-box">🤖</div>
+                            <div class="s5-step-text">
+                                <div class="s5-step-title">2. YAML & プロンプトの自律設計</div>
+                                <div class="s5-step-desc">Claudeが最適な権限や記述内容を自ら考えて文章化</div>
+                            </div>
+                        </div>
+                        <div class="s5-arrow">⬇️</div>
+                        <div class="s5-step">
+                            <div class="s5-icon-box">💾</div>
+                            <div class="s5-step-text">
+                                <div class="s5-step-title">3. ファイルの自動保存</div>
+                                <div class="s5-step-desc">指示されたフォルダパスへ即座に出力・保存が完了！</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 6: SUMMARY ==================== -->
+        <div class="slide slide6 theme-yellow" id="slide6">
+            <div class="title-area">
+                <h2><span class="title-badge">SUMMARY</span>カスタムエージェントのまとめ</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">開発ルールを自動で守る仕組み</div>
+                            <div class="point-desc">チームの規約をカスタムエージェント化しGitで共有することで、コード品質の均一化を無理なく行えます。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">YAML ＋ プロンプトの調和</div>
+                            <div class="point-desc">必須設定（name, description）のほか、モデルやツールの制限を組み合わせて自由自在にコントロール可能です。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">次回：descriptionの書き方比較</div>
+                            <div class="point-desc">自動委譲を大きく左右する `description` の役割。次回は「悪い例」と「良い例」を徹底的に比較していきます。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s6">
+                        <div class="s6-bp-row">
+                            <div class="s6-bp-icon">🤝</div>
+                            <div class="s6-bp-text-box">
+                                <div class="s6-bp-title-text">チーム開発に組み込もう</div>
+                                <div class="s6-bp-desc-text">プロジェクトスコープ（.claude/agents/）にレビュールールを置き、Git共有するのが最も強力な使い方です。</div>
+                            </div>
+                        </div>
+                        <div class="s6-bp-row">
+                            <div class="s6-bp-icon">🔑</div>
+                            <div class="s6-bp-text-box">
+                                <div class="s6-bp-title-text">自動委譲の鍵は description</div>
+                                <div class="s6-bp-desc-text">この説明が曖昧だとエージェントが呼び出されなくなります。次回、最適な書き方のルールを解説します！</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 共通ナビゲーションUI ==================== -->
+        <div class="nav-info">
+            <div class="slide-counter" id="counter">1 / 6</div>
+        </div>
+
+    </div>
+
+    <!-- ==================== slide control script ==================== -->
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 6;
+
+        function showSlide(slideNumber) {
+            // Remove active class from current slides
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+
+            // Set active class to selected slide
+            document.getElementById(`slide${slideNumber}`).classList.add('active');
+            currentSlide = slideNumber;
+
+            // Update counter value
+            document.getElementById('counter').innerText = `${currentSlide} / ${totalSlides}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        function firstSlide() {
+            showSlide(1);
+        }
+
+        function lastSlide() {
+            showSlide(totalSlides);
+        }
+
+        // Add Key Bindings
+        document.addEventListener('keydown', function(event) {
+            switch(event.key) {
+                case 'ArrowRight':
+                case ' ':
+                    event.preventDefault();
+                    nextSlide();
+                    break;
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    prevSlide();
+                    break;
+                case 'Home':
+                    event.preventDefault();
+                    firstSlide();
+                    break;
+                case 'End':
+                    event.preventDefault();
+                    lastSlide();
+                    break;
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                    event.preventDefault();
+                    const slideNum = parseInt(event.key);
+                    if (slideNum >= 1 && slideNum <= totalSlides) {
+                        showSlide(slideNum);
+                    }
+                    break;
+            }
+        });
+
+        // Initialize display
+        showSlide(1);
+    </script>
+</body>
+</html>

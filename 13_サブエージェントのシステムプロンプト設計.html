@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>23-3-3 サブエージェント「システムプロンプト」設計 - Udemy講座スライド</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CSS Reset & Variables --- */
+        :root {
+            --primary-color: #FFD600;    /* メイン黄色 */
+            --secondary-color: #25BAE9;  /* サブ青色 */
+            --text-black: #333333;       /* メインテキスト */
+            --background-gray: #EFF3F4;  /* 背景グレー */
+            --white: #FFFFFF;            /* 白背景 */
+            --text-gray: #555555;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --card-shadow: 0 8px 30px rgba(0,0,0,0.04);
+            --transition-speed: 0.4s;
+            --success-color: #22C55E;
+            --danger-color: #EF4444;
+            --accent-purple: #8B5CF6;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #111111;
+            color: var(--text-black);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- 16:9 Aspect Ratio Slide Container --- */
+        .slide-container {
+            width: 90vw;
+            height: 50.625vw; /* 9/16 * 90vw */
+            max-width: 1600px;
+            max-height: 900px;
+            position: relative;
+            background-color: var(--white);
+            box-shadow: 0 25px 70px rgba(0,0,0,0.6);
+            border-radius: 12px;
+            overflow: hidden;
+            container-type: size;
+            container-name: slide;
+        }
+
+        /* Vertical viewport adjustments */
+        @media (max-aspect-ratio: 16/9) {
+            .slide-container {
+                width: 177.78vh; /* 16/9 * 90vh */
+                height: 90vh;
+            }
+        }
+
+        /* --- Individual Slide Wrapper --- */
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition-speed) cubic-bezier(0.25, 1, 0.5, 1);
+            background-color: var(--white);
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 2;
+        }
+
+        /* Theme Styling options */
+        .slide.theme-blue {
+            background-color: var(--white);
+        }
+
+        .slide.theme-yellow {
+            background-color: var(--background-gray);
+        }
+
+        /* --- Title Area (Header 15%) --- */
+        .title-area {
+            height: 15cqh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 4cqw;
+            position: relative;
+        }
+
+        .slide.theme-yellow .title-area {
+            background-color: var(--primary-color);
+        }
+
+        .slide.theme-blue .title-area {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .title-area h2 {
+            margin: 0;
+            font-size: 2.8cqw;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 1.5cqw;
+        }
+
+        .title-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05cqw;
+            font-weight: 800;
+            background-color: rgba(255, 255, 255, 0.35);
+            color: inherit;
+            padding: 0.4cqh 1.2cqw;
+            border-radius: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .slide.theme-yellow .title-badge {
+            background-color: rgba(0, 0, 0, 0.08);
+            color: var(--text-black);
+        }
+
+        /* --- Main Content Area --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            padding: 4cqh 4cqw 6cqh 4cqw;
+            gap: 4cqw;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 3cqh;
+        }
+
+        .right-panel {
+            width: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Bullet Points */
+        .points-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 3cqh;
+        }
+
+        .points-list li {
+            position: relative;
+            padding-left: 2.5cqw;
+        }
+
+        .points-list li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0.7cqh;
+            width: 1.2cqw;
+            height: 1.2cqw;
+            border-radius: 50%;
+        }
+
+        .slide.theme-yellow .points-list li::before {
+            background-color: var(--secondary-color);
+        }
+
+        .slide.theme-blue .points-list li::before {
+            background-color: var(--primary-color);
+        }
+
+        .point-title {
+            font-size: 1.45cqw;
+            font-weight: 700;
+            color: #111111;
+            margin-bottom: 0.6cqh;
+        }
+
+        .point-desc {
+            font-size: 1.05cqw;
+            color: var(--text-gray);
+            line-height: 1.55;
+            margin: 0;
+        }
+
+        /* --- Navigation Counter Floating (Standard Capsule Style) --- */
+        .nav-info {
+            position: absolute;
+            bottom: 20px;
+            left: 5%;
+            right: 5%;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            font-size: 0.95rem;
+            color: #888;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .slide-counter {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .slide.theme-blue .slide-counter {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .slide.theme-yellow .slide-counter {
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        /* ==========================================================================
+           SLIDE-SPECIFIC CUSTOM DIAGRAM STYLES
+           ========================================================================== */
+
+        /* --- Common diagram wrapper --- */
+        .diagram-container {
+            width: 95%;
+            height: 95%;
+            background: rgba(255,255,255,0.85);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .slide.theme-blue .diagram-container {
+            background: var(--background-gray);
+        }
+
+        .slide.theme-yellow .diagram-container {
+            background: var(--white);
+        }
+
+        /* --- Slide 1: System Prompt Architecture --- */
+        .s1-structure {
+            display: flex;
+            width: 100%;
+            height: 85%;
+            gap: 2cqw;
+            margin-top: 1cqh;
+        }
+
+        .s1-box {
+            flex: 1;
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 2cqh 1.5cqw;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        }
+
+        .s1-box.yaml { border-top: 5px solid var(--secondary-color); }
+        .s1-box.markdown { border-top: 5px solid var(--accent-purple); }
+
+        .s1-box-header {
+            font-size: 1.15cqw;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 1.5cqh;
+            padding-bottom: 0.5cqh;
+            border-bottom: 1.5px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 0.5cqw;
+        }
+
+        .s1-box-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2cqh;
+            flex: 1;
+            justify-content: flex-start;
+        }
+
+        .s1-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 0.8cqh 1cqw;
+            font-size: 0.85cqw;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .s1-item-title {
+            font-weight: 700;
+            color: #334155;
+        }
+
+        .s1-item-desc {
+            font-size: 0.7cqw;
+            color: var(--text-gray);
+            margin-top: 0.2cqh;
+        }
+
+        .s1-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.75cqw;
+            font-weight: 800;
+            padding: 0.2cqh 0.6cqw;
+            border-radius: 4px;
+            align-self: flex-start;
+            margin-bottom: 1cqh;
+        }
+        .yaml .s1-badge { background: #e0f2fe; color: #0369a1; }
+        .markdown .s1-badge { background: #f3e8ff; color: #6b21a8; }
+
+        /* --- Slide 2: Role and Checklist --- */
+        .s2-stack {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 90%;
+            gap: 2cqh;
+            justify-content: center;
+        }
+
+        .s2-role-card {
+            background: #ffffff;
+            border: 2px solid var(--secondary-color);
+            border-radius: 8px;
+            padding: 2cqh 2cqw;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(37,186,233,0.05);
+        }
+
+        .s2-card-label {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.85cqw;
+            font-weight: 800;
+            color: var(--secondary-color);
+            text-transform: uppercase;
+            margin-bottom: 0.5cqh;
+            letter-spacing: 0.5px;
+        }
+
+        .s2-role-content {
+            font-size: 1.15cqw;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .s2-arrow {
+            text-align: center;
+            font-size: 1.5cqw;
+            color: var(--secondary-color);
+            line-height: 1;
+        }
+
+        .s2-checklist-card {
+            background: #ffffff;
+            border: 2px solid var(--accent-purple);
+            border-radius: 8px;
+            padding: 2cqh 2cqw;
+            box-shadow: 0 4px 15px rgba(139,92,246,0.05);
+        }
+
+        .s2-checklist-card .s2-card-label {
+            color: var(--accent-purple);
+        }
+
+        .s2-steps {
+            display: flex;
+            justify-content: space-between;
+            gap: 1cqw;
+            margin-top: 1cqh;
+        }
+
+        .s2-step {
+            flex: 1;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 1.2cqh 1cqw;
+            font-size: 0.85cqw;
+            text-align: center;
+            position: relative;
+        }
+
+        .s2-step:not(:last-child)::after {
+            content: "➔";
+            position: absolute;
+            right: -0.8cqw;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1cqw;
+            color: #94a3b8;
+            z-index: 10;
+        }
+
+        .s2-step-num {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 900;
+            color: var(--accent-purple);
+            font-size: 1cqw;
+            display: block;
+            margin-bottom: 0.3cqh;
+        }
+
+        .s2-step-text {
+            font-weight: 700;
+            color: #334155;
+        }
+
+        /* --- Slide 3: Output and Forbidden Boundaries --- */
+        .s3-layout {
+            display: flex;
+            width: 100%;
+            height: 90%;
+            gap: 2cqw;
+            align-items: center;
+        }
+
+        .s3-card {
+            flex: 1;
+            height: 100%;
+            background: #ffffff;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            padding: 2.5cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        }
+
+        .s3-card.output {
+            border-top: 5px solid var(--secondary-color);
+        }
+
+        .s3-card.boundary {
+            border-top: 5px solid var(--danger-color);
+        }
+
+        .s3-header {
+            font-size: 1.1cqw;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 1.5cqh;
+            display: flex;
+            align-items: center;
+            gap: 0.5cqw;
+        }
+
+        .s3-mock-code {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 1.5cqh 1.2cqw;
+            font-family: monospace;
+            font-size: 0.8cqw;
+            line-height: 1.4;
+            color: #475569;
+            flex: 1;
+            text-align: left;
+        }
+
+        .s3-mock-line {
+            display: block;
+        }
+        .s3-mock-line.comment {
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        .s3-boundary-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5cqh;
+            justify-content: center;
+        }
+
+        .s3-forbidden-box {
+            background: #fff5f5;
+            border: 1px solid #fed7d7;
+            border-radius: 8px;
+            padding: 1.5cqh 1.2cqw;
+            display: flex;
+            align-items: flex-start;
+            gap: 1cqw;
+            text-align: left;
+        }
+
+        .s3-forbidden-icon {
+            font-size: 1.5cqw;
+            color: var(--danger-color);
+            line-height: 1;
+        }
+
+        .s3-forbidden-text {
+            font-size: 0.85cqw;
+            color: #9b1c1c;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        /* --- Slide 4: Front Matter Tools Gateway --- */
+        .s4-layout {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 90%;
+            gap: 2cqh;
+            justify-content: center;
+        }
+
+        .s4-code-card {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 1.5cqh 2cqw;
+            text-align: left;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        }
+
+        .s4-code-label {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.8cqw;
+            font-weight: 800;
+            color: #64748b;
+            margin-bottom: 0.5cqh;
+        }
+
+        .s4-code-block {
+            font-family: monospace;
+            font-size: 1.05cqw;
+            color: #0f172a;
+            background: #f8fafc;
+            padding: 1cqh 1.5cqw;
+            border-radius: 6px;
+            border-left: 4px solid var(--secondary-color);
+            margin: 0;
+        }
+
+        .s4-gate-system {
+            display: flex;
+            justify-content: space-between;
+            align-items: stretch;
+            gap: 2cqw;
+            margin-top: 1cqh;
+        }
+
+        .s4-gate-panel {
+            flex: 1;
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 1.8cqh 1.5cqw;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+            text-align: left;
+        }
+
+        .s4-gate-panel.allow {
+            border-top: 4px solid var(--success-color);
+        }
+
+        .s4-gate-panel.block {
+            border-top: 4px solid var(--danger-color);
+        }
+
+        .s4-panel-title {
+            font-size: 0.95cqw;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 1cqh;
+            display: flex;
+            align-items: center;
+            gap: 0.4cqw;
+        }
+
+        .s4-panel-title.allow { color: #166534; }
+        .s4-panel-title.block { color: #991b1b; }
+
+        .s4-tools-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6cqw;
+        }
+
+        .s4-tool-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.8cqw;
+            font-weight: 700;
+            padding: 0.4cqh 0.8cqw;
+            border-radius: 4px;
+        }
+
+        .s4-gate-panel.allow .s4-tool-badge {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+
+        .s4-gate-panel.block .s4-tool-badge {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        .s4-gate-desc {
+            font-size: 0.75cqw;
+            color: var(--text-gray);
+            margin-top: 1cqh;
+            line-height: 1.4;
+        }
+
+        /* --- Slide 5: Soft vs Hard Constraints --- */
+        .s5-layout {
+            display: flex;
+            width: 100%;
+            height: 90%;
+            gap: 2cqw;
+        }
+
+        .s5-card {
+            flex: 1;
+            background: #ffffff;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            padding: 2.5cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+            text-align: left;
+        }
+
+        .s5-card.soft {
+            border-top: 5px solid #f59e0b;
+        }
+
+        .s5-card.hard {
+            border-top: 5px solid var(--success-color);
+        }
+
+        .s5-header {
+            font-size: 1.15cqw;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 1.5cqh;
+            display: flex;
+            align-items: center;
+            gap: 0.5cqw;
+        }
+
+        .s5-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.75cqw;
+            font-weight: 800;
+            padding: 0.2cqh 0.6cqw;
+            border-radius: 4px;
+            align-self: flex-start;
+            margin-bottom: 1cqh;
+        }
+        .soft .s5-badge { background: #fef3c7; color: #d97706; }
+        .hard .s5-badge { background: #dcfce7; color: #15803d; }
+
+        .s5-content {
+            font-size: 0.85cqw;
+            color: var(--text-gray);
+            line-height: 1.5;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2cqh;
+        }
+
+        .s5-highlight {
+            background: #f8fafc;
+            border-radius: 6px;
+            padding: 1cqh 1cqw;
+            border-left: 3px solid #cbd5e1;
+            font-weight: 600;
+            color: #334155;
+        }
+        .soft .s5-highlight { border-left-color: #f59e0b; }
+        .hard .s5-highlight { border-left-color: var(--success-color); }
+
+        /* --- Slide 6: Summary Checklist --- */
+        .s6-layout {
+            width: 100%;
+            height: 90%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .s6-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5cqw;
+            height: 80%;
+        }
+
+        .s6-card {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 1.8cqh 1.5cqw;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        .s6-card.c1 { border-left: 5px solid var(--secondary-color); }
+        .s6-card.c2 { border-left: 5px solid var(--accent-purple); }
+        .s6-card.c3 { border-left: 5px solid #f59e0b; }
+        .s6-card.c4 { border-left: 5px solid var(--success-color); }
+
+        .s6-card-title {
+            font-size: 1.05cqw;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 0.5cqh;
+            display: flex;
+            align-items: center;
+            gap: 0.4cqw;
+        }
+
+        .s6-card-desc {
+            font-size: 0.8cqw;
+            color: var(--text-gray);
+            line-height: 1.45;
+        }
+
+        .s6-badge-num {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.8cqw;
+            font-weight: 900;
+            background: #f1f5f9;
+            color: #64748b;
+            width: 1.6cqw;
+            height: 1.6cqw;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.2cqw;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="slide-container">
+
+        <!-- ==================== SLIDE 1: OVERVIEW ==================== -->
+        <div class="slide slide1 active theme-yellow" id="slide1">
+            <div class="title-area">
+                <h2><span class="title-badge">OVERVIEW</span>システムプロンプトの役割と3つの固定要素</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">可変である「目的」の分離</div>
+                            <div class="point-desc">依頼ごとに変化する「目的」は、メインAIが都度生成する依頼プロンプト（前回学習）で渡す。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">固定である3つの要素</div>
+                            <div class="point-desc">「出力フォーマット」「ツールや情報源」「タスクの境界」は、タスクによらず基本的に固定のためシステムプロンプトに定義する。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">二重の構成構造</div>
+                            <div class="point-desc">設定情報となる「YAMLフロントマター」と、自然言語で指示する「Markdown本文」の2つから成る。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-container">
+                        <span class="s2-card-label" style="margin-bottom: 1.5cqh;">⚙️ システムプロンプトの全体像</span>
+                        <div class="s1-structure">
+                            <div class="s1-box yaml">
+                                <div class="s1-badge">フロントマター</div>
+                                <div class="s1-box-header">YAML設定部</div>
+                                <div class="s1-box-content">
+                                    <div class="s1-item">
+                                        <span class="s1-item-title">description</span>
+                                        <span class="s1-item-desc">メインAIが役割を判断するための記述</span>
+                                    </div>
+                                    <div class="s1-item">
+                                        <span class="s1-item-title">tools: [...]</span>
+                                        <span class="s1-item-desc">使用ツールを絞り権限を物理遮断</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="s1-box markdown">
+                                <div class="s1-badge">本文</div>
+                                <div class="s1-box-header">Markdown指示部</div>
+                                <div class="s1-box-content">
+                                    <div class="s1-item">
+                                        <span class="s1-item-title">1. 役割の一文定義</span>
+                                        <span class="s1-item-desc">専門性の明示（判断の土台）</span>
+                                    </div>
+                                    <div class="s1-item">
+                                        <span class="s1-item-title">2. 観点チェックリスト</span>
+                                        <span class="s1-item-desc">肯定形の境界（漏れの防止）</span>
+                                    </div>
+                                    <div class="s1-item">
+                                        <span class="s1-item-title">3. 出力フォーマット</span>
+                                        <span class="s1-item-desc">厳格な出力指定（親の解釈用）</span>
+                                    </div>
+                                    <div class="s1-item">
+                                        <span class="s1-item-title">4. 否定形の境界</span>
+                                        <span class="s1-item-desc">「〜するな」等の禁止による暴走防止</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 2: MARKDOWN 1 ==================== -->
+        <div class="slide slide2 theme-blue" id="slide2">
+            <div class="title-area">
+                <h2><span class="title-badge">MARKDOWN 01</span>本文の設計①：役割定義 & 観点チェックリスト</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">役割の一文定義（専門性の決定）</div>
+                            <div class="point-desc">「あなたは〇〇に特化したスペシャリストである」と明記。何者であるかを定義し、AIの全判断の土台とする。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">観点チェックリストによる抜け漏れ防止</div>
+                            <div class="point-desc">評価すべき基準をリストにして並べ、必ず上から順にチェックすることを義務付ける（例: メモリリークの確認等）。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">「肯定形」のタスク境界</div>
+                            <div class="point-desc">「必ず実行すべきこと」を内側から縛ることで、タスク境界の半分を定義する（残り半分は否定形の境界）。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-container">
+                        <div class="s2-stack">
+                            <div class="s2-role-card">
+                                <div class="s2-card-label">01. 役割の一文定義（判断の土台）</div>
+                                <div class="s2-role-content">「あなたはコード監査に特化したシニアスペシャリストである」</div>
+                            </div>
+                            <div class="s2-arrow">⬇️ 評価基準の義務化</div>
+                            <div class="s2-checklist-card">
+                                <div class="s2-card-label">02. 観点チェックリスト（肯定形の境界）</div>
+                                <div class="s2-steps">
+                                    <div class="s2-step">
+                                        <span class="s2-step-num">Step 1</span>
+                                        <span class="s2-step-text">描画境界の<br>確認</span>
+                                    </div>
+                                    <div class="s2-step">
+                                        <span class="s2-step-num">Step 2</span>
+                                        <span class="s2-step-text">メモリリーク<br>の有無</span>
+                                    </div>
+                                    <div class="s2-step">
+                                        <span class="s2-step-num">Step 3</span>
+                                        <span class="s2-step-text">エラーハンド<br>リング</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 3: MARKDOWN 2 ==================== -->
+        <div class="slide slide3 theme-blue" id="slide3">
+            <div class="title-area">
+                <h2><span class="title-badge">MARKDOWN 02</span>本文の設計②：出力構造の制限 & 否定形の境界</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">出力フォーマットの厳格な指定</div>
+                            <div class="point-desc">「最終的な返却値は必ず次の構造のみに従うこと。前置きや挨拶は一切排除せよ」と指定し、親AIが解釈しやすくする。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">否定形のタスク境界による暴走抑止</div>
+                            <div class="point-desc">「自分で書いたコードをローカルファイルに直接書き込んではならない」等、明確に「やってはいけない」を指示する。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">肯定・否定が揃って境界が定まる</div>
+                            <div class="point-desc">「やるべきこと（肯定形）」と「してはならないこと（否定形）」の両側から規定することで、スコープを完全に確定する。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-container">
+                        <div class="s3-layout">
+                            <div class="s3-card output">
+                                <div class="s3-header">📝 厳格な出力指定</div>
+                                <div class="s3-mock-code">
+                                    <span class="s3-mock-line comment"># 余計な挨拶は排除</span>
+                                    <span class="s3-mock-line comment"># 構造データのみを返す</span>
+                                    <span class="s3-mock-line">## 監査結果</span>
+                                    <span class="s3-mock-line">- ステータス: PASS</span>
+                                    <span class="s3-mock-line">- 検出数: 0</span>
+                                </div>
+                            </div>
+                            <div class="s3-card boundary">
+                                <div class="s3-header">⛔ 否定形のタスク境界</div>
+                                <div class="s3-boundary-content">
+                                    <div class="s3-forbidden-box">
+                                        <span class="s3-forbidden-icon">❌</span>
+                                        <div class="s3-forbidden-text">ローカルファイルに直接修正を書き込まない</div>
+                                    </div>
+                                    <div class="s3-forbidden-box">
+                                        <span class="s3-forbidden-icon">❌</span>
+                                        <div class="s3-forbidden-text">修正案はコードブロックで提示するのみとする</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 4: FRONT MATTER ==================== -->
+        <div class="slide slide4 theme-blue" id="slide4">
+            <div class="title-area">
+                <h2><span class="title-badge">FRONT MATTER</span>YAMLフロントマターによるツール権限の制限</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">description による起動の制御</div>
+                            <div class="point-desc">サブエージェントの役割記述。メインAIが「何をする専門家か」を判断し、適切な時に起動するために使われる。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">tools フィールドでの権限の指定</div>
+                            <div class="point-desc">サブエージェントが使用できるツールを制限し、範囲外のアクションを物理的に制限する（暴走を防ぐ最強の防御壁）。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">例: 読み取り専用エージェントの作成</div>
+                            <div class="point-desc">`tools: [Read, Grep, Glob]` に絞り、`Write` や `Edit` などの破壊的ツールへのアクセスをあらかじめ外しておく。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-container">
+                        <div class="s4-layout">
+                            <div class="s4-code-card">
+                                <div class="s4-code-label">YAML Configuration</div>
+                                <pre class="s4-code-block">tools: [Read, Grep, Glob]</pre>
+                            </div>
+                            <div class="s4-gate-system">
+                                <div class="s4-gate-panel allow">
+                                    <div class="s4-panel-title allow">🟢 許可ツール（アクセス可）</div>
+                                    <div class="s4-tools-list">
+                                        <span class="s4-tool-badge">Read</span>
+                                        <span class="s4-tool-badge">Grep</span>
+                                        <span class="s4-tool-badge">Glob</span>
+                                    </div>
+                                    <span class="s4-gate-desc">読み取りに必要な権限のみ通過を許可</span>
+                                </div>
+                                <div class="s4-gate-panel block">
+                                    <div class="s4-panel-title block">🔴 遮断ツール（実行不可）</div>
+                                    <div class="s4-tools-list">
+                                        <span class="s4-tool-badge">Write</span>
+                                        <span class="s4-tool-badge">Edit</span>
+                                    </div>
+                                    <span class="s4-gate-desc">書き換え権限を物理的に遮断して暴走を防止</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 5: CONSTRAINT ==================== -->
+        <div class="slide slide5 theme-blue" id="slide5">
+            <div class="title-area">
+                <h2><span class="title-badge">CONSTRAINT</span>二段構えの制約設計：ソフト指示とハード遮断</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">プロンプト指示（ソフトな制約）の限界</div>
+                            <div class="point-desc">いくら本文で「ファイルを編集するな」と指示しても、AIが推論時にルールを忘れてしまい、書き換えてしまう事故が起こる。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">toolsによる「ハードな物理遮断」</div>
+                            <div class="point-desc">実行環境そのものからツールの権限を取り除くことで、エージェントがルールを忘れても物理的に実行できない状態にする。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">信頼できるシステムプロンプトの秘訣</div>
+                            <div class="point-desc">本文のソフトな制約（指示）を、フロントマターのハードな物理遮断（tools制限）で裏打ちする二段構えが必要。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-container">
+                        <div class="s5-layout">
+                            <div class="s5-card soft">
+                                <div class="s5-badge">本文での指示</div>
+                                <div class="s5-header">⚠️ ソフトな制約</div>
+                                <div class="s5-content">
+                                    <div class="s5-highlight">「ファイルを直接編集するな」と記述</div>
+                                    <p>・AIのルール忘れで書き換えが実行されるリスクが残る</p>
+                                    <p>・自然言語の「約束事」に依存</p>
+                                </div>
+                            </div>
+                            <div class="s5-card hard">
+                                <div class="s5-badge">tools設定</div>
+                                <div class="s5-header">🛡️ ハードな物理遮断</div>
+                                <div class="s5-content">
+                                    <div class="s5-highlight">Write/Edit ツールを除外</div>
+                                    <p>・ルールを忘れても、ツールがないため物理的に実行不可能</p>
+                                    <p>・環境側の「権限設計」による強制</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 6: SUMMARY ==================== -->
+        <div class="slide slide6 theme-yellow" id="slide6">
+            <div class="title-area">
+                <h2><span class="title-badge">SUMMARY</span>信頼できるシステムプロンプトの設計方針</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">役割の明示と肯定的な境界</div>
+                            <div class="point-desc">専門ロールを冒頭で一文定義し、観点チェックリストで「やるべきこと（肯定形）」の境界を固定する。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">厳格な出力フォーマットと否定の境界</div>
+                            <div class="point-desc">親AIが扱える形に出力を絞り、否定形の境界で「やってはいけないこと」を明記する。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">物理的遮断による裏打ち</div>
+                            <div class="point-desc">本文の禁止指示は、フロントマターの `tools` 制限で確実に物理遮断する。これによって安全で完璧なエージェントが稼働する。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-container">
+                        <div class="s6-layout">
+                            <span class="s2-card-label" style="margin-bottom: 2cqh; text-align: center;">🎯 システムプロンプト設計の4か条</span>
+                            <div class="s6-grid">
+                                <div class="s6-card c1">
+                                    <div class="s6-card-title"><span class="s6-badge-num">1</span> 役割の一文定義</div>
+                                    <span class="s6-card-desc">冒頭でスペシャリストとしての専門性を明確にし、全ての判断の土台にする。</span>
+                                </div>
+                                <div class="s6-card c2">
+                                    <div class="s6-card-title"><span class="s6-badge-num">2</span> 観点チェックリスト</div>
+                                    <span class="s6-card-desc">肯定形の境界。「上から順番に漏れなくチェック」を義務付けて評価漏れを防ぐ。</span>
+                                </div>
+                                <div class="s6-card c3">
+                                    <div class="s6-card-title"><span class="s6-badge-num">3</span> 出力の厳格な指定</div>
+                                    <span class="s6-card-desc">返却値をMarkdown構造のみに縛り、余計な挨拶を排除。親AIのパースを補助する。</span>
+                                </div>
+                                <div class="s6-card c4">
+                                    <div class="s6-card-title"><span class="s6-badge-num">4</span> 物理的遮断の裏打ち</div>
+                                    <span class="s6-card-desc">「〜するな」という否定形の境界を、フロントマターの tools から除外して裏打ちする。</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ==================== 共通ナビゲーションUI ==================== -->
+    <div class="nav-info">
+        <div class="slide-counter" id="counter">1 / 6</div>
+    </div>
+
+    <!-- JavaScript for Slideshow Control -->
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 6;
+
+        function showSlide(slideNumber) {
+            // 現在のアクティブスライドを非表示
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+
+            // 新しいスライドを表示
+            document.getElementById(`slide${slideNumber}`).classList.add('active');
+            
+            // カウンターテキストの更新
+            const counterEl = document.getElementById('counter');
+            counterEl.innerText = `${slideNumber} / ${totalSlides}`;
+            currentSlide = slideNumber;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        function firstSlide() {
+            showSlide(1);
+        }
+
+        function lastSlide() {
+            showSlide(totalSlides);
+        }
+
+        document.addEventListener('keydown', function(event) {
+            // 入力中などの場合はイベントをスルー
+            if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            switch(event.key) {
+                case 'ArrowRight':
+                case ' ':
+                    event.preventDefault();
+                    nextSlide();
+                    break;
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    prevSlide();
+                    break;
+                case 'Home':
+                    event.preventDefault();
+                    firstSlide();
+                    break;
+                case 'End':
+                    event.preventDefault();
+                    lastSlide();
+                    break;
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                    event.preventDefault();
+                    const slideNum = parseInt(event.key);
+                    if (slideNum >= 1 && slideNum <= totalSlides) {
+                        showSlide(slideNum);
+                    }
+                    break;
+            }
+        });
+
+        // 初期ロード時に1ページ目を表示
+        showSlide(1);
+    </script>
+</body>
+</html>

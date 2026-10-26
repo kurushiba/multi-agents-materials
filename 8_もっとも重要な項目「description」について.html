@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2-4 descriptionのチューニング - Udemy講座スライド</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CSS Reset & Variables --- */
+        :root {
+            --primary-color: #FFD600;    /* メイン黄色 */
+            --secondary-color: #25BAE9;  /* サブ青色 */
+            --text-black: #333333;       /* メインテキスト */
+            --background-gray: #EFF3F4;  /* 背景グレー */
+            --white: #FFFFFF;            /* 白背景・テキスト */
+            --text-gray: #555555;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --card-shadow: 0 8px 30px rgba(0,0,0,0.04);
+            --transition-speed: 0.4s;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #111111;
+            color: var(--text-black);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- 16:9 Aspect Ratio Slide Container --- */
+        .slide-container {
+            width: 90vw;
+            height: 50.625vw; /* 9/16 * 90vw */
+            max-width: 1600px;
+            max-height: 900px;
+            position: relative;
+            background-color: var(--white);
+            box-shadow: 0 25px 70px rgba(0,0,0,0.6);
+            border-radius: 12px;
+            overflow: hidden;
+            container-type: size;
+            container-name: slide;
+        }
+
+        /* Vertical viewport adjustments */
+        @media (max-aspect-ratio: 16/9) {
+            .slide-container {
+                width: 177.78vh; /* 16/9 * 90vh */
+                height: 90vh;
+            }
+        }
+
+        /* --- Individual Slide Wrapper --- */
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition-speed) cubic-bezier(0.25, 1, 0.5, 1);
+            background-color: var(--white);
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 2;
+        }
+
+        /* Theme Styling options */
+        .slide.theme-blue {
+            background-color: var(--white);
+        }
+
+        .slide.theme-yellow {
+            background-color: var(--background-gray);
+        }
+
+        /* --- Title Area (Header 15%) --- */
+        .title-area {
+            height: 15cqh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 4cqw;
+            position: relative;
+        }
+
+        .slide.theme-yellow .title-area {
+            background-color: var(--primary-color);
+        }
+
+        .slide.theme-blue .title-area {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .title-area h2 {
+            margin: 0;
+            font-size: 2.8cqw;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 1.5cqw;
+        }
+
+        .title-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05cqw;
+            font-weight: 800;
+            background-color: rgba(255, 255, 255, 0.35);
+            color: inherit;
+            padding: 0.4cqh 1.2cqw;
+            border-radius: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .slide.theme-yellow .title-badge {
+            background-color: rgba(0, 0, 0, 0.08);
+            color: var(--text-black);
+        }
+
+        /* --- Main Content Area --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            padding: 4cqh 4cqw 6cqh 4cqw;
+            gap: 4cqw;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 3cqh;
+        }
+
+        .right-panel {
+            width: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Bullet Points */
+        .points-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 3cqh;
+        }
+
+        .points-list li {
+            position: relative;
+            padding-left: 2.5cqw;
+        }
+
+        .points-list li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0.7cqh;
+            width: 1.2cqw;
+            height: 1.2cqw;
+            border-radius: 50%;
+        }
+
+        .slide.theme-yellow .points-list li::before {
+            background-color: var(--secondary-color);
+        }
+
+        .slide.theme-blue .points-list li::before {
+            background-color: var(--primary-color);
+        }
+
+        .point-title {
+            font-size: 1.45cqw;
+            font-weight: 700;
+            color: #111111;
+            margin-bottom: 0.6cqh;
+        }
+
+        .point-desc {
+            font-size: 1.05cqw;
+            color: var(--text-gray);
+            line-height: 1.55;
+            margin: 0;
+        }
+
+        /* --- Navigation Counter Floating (Standard Capsule Style) --- */
+        .nav-info {
+            position: absolute;
+            bottom: 20px;
+            left: 5%;
+            right: 5%;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            font-size: 0.95rem;
+            color: #888;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .slide-counter {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .slide.theme-blue .slide-counter {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .slide.theme-yellow .slide-counter {
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        /* ==========================================================================
+           SLIDE-SPECIFIC CUSTOM DIAGRAM STYLES
+           ========================================================================== */
+
+        /* --- Slide 1: Routing Process --- */
+        .diagram-s1 {
+            width: 95%;
+            height: 85%;
+            background: rgba(255,255,255,0.8);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2.5cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+        .s1-header {
+            font-size: 1.2cqw;
+            font-weight: 800;
+            color: #111;
+            display: flex;
+            align-items: center;
+            gap: 0.8cqw;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 1cqh;
+        }
+        .s1-flow {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5cqh;
+        }
+        .s1-step {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.5cqh 1.5cqw;
+            display: flex;
+            align-items: center;
+            gap: 1cqw;
+        }
+        .s1-step.highlight {
+            border: 2px solid var(--secondary-color);
+            background: #f0fafd;
+        }
+        .s1-icon {
+            font-size: 1.8cqw;
+        }
+        .s1-text {
+            font-size: 0.95cqw;
+            font-weight: 500;
+            color: var(--text-black);
+        }
+        .s1-arrow {
+            text-align: center;
+            font-size: 1.2cqw;
+            color: var(--secondary-color);
+            line-height: 1;
+        }
+
+        /* --- Slide 2: Context Footprint (Buckets) --- */
+        .diagram-s2 {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            width: 100%;
+            height: 85%;
+            padding: 2cqh 1cqw;
+        }
+        .s2-bucket-wrap {
+            width: 42%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5cqh;
+        }
+        .s2-bucket-label {
+            font-size: 1.05cqw;
+            font-weight: 800;
+            text-align: center;
+        }
+        .s2-bucket {
+            width: 100%;
+            flex: 1;
+            border: 3px solid #cbd5e1;
+            border-top: none;
+            border-radius: 0 0 16px 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            overflow: hidden;
+            background: #f8fafc;
+            position: relative;
+        }
+        .s2-bucket-wrap.good .s2-bucket {
+            border-color: var(--secondary-color);
+        }
+        .s2-bucket-wrap.bad .s2-bucket {
+            border-color: #ef4444;
+        }
+        .s2-fill {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85cqw;
+            font-weight: 700;
+            text-align: center;
+            color: white;
+            transition: height 0.5s ease;
+        }
+        .s2-fill.description {
+            background-color: rgba(226, 232, 240, 0.8);
+            color: #475569;
+            border-top: 1px dashed #94a3b8;
+        }
+        .s2-bucket-wrap.good .s2-fill.description {
+            background-color: rgba(37, 186, 233, 0.2);
+            color: #0369a1;
+            height: 20%;
+        }
+        .s2-bucket-wrap.bad .s2-fill.description {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #b91c1c;
+            height: 65%;
+        }
+        .s2-fill.free {
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #64748b;
+            flex: 1;
+            border-bottom: 2px solid #cbd5e1;
+        }
+        .s2-bucket-wrap.good .s2-fill.free {
+            background-color: #f0fdf4;
+            color: #15803d;
+        }
+        .s2-bucket-wrap.bad .s2-fill.free {
+            background-color: #fff1f2;
+            color: #b91c1c;
+        }
+
+        /* --- Slide 3: Bad Example --- */
+        .diagram-s3 {
+            width: 90%;
+            height: 90%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .s3-card {
+            background: #fff5f5;
+            border: 2px solid #feb2b2;
+            border-radius: 12px;
+            padding: 2cqh 2cqw;
+            box-shadow: var(--card-shadow);
+        }
+        .s3-card-header {
+            font-size: 0.9cqw;
+            font-weight: 800;
+            color: #c53030;
+            text-transform: uppercase;
+            margin-bottom: 1cqh;
+            letter-spacing: 0.5px;
+        }
+        .s3-card-code {
+            font-family: 'Outfit', 'Fira Code', 'Courier New', Courier, monospace;
+            font-size: 1.05cqw;
+            font-weight: 500;
+            color: #abb2bf;
+            background: #1e1e1e;
+            padding: 1.5cqh 1.8cqw;
+            border-radius: 8px;
+            border: 1px solid #feb2b2;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            line-height: 1.5;
+            text-align: left;
+        }
+        .s3-consequences {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5cqh;
+        }
+        .s3-cons-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.5cqh 1.5cqw;
+            display: flex;
+            align-items: flex-start;
+            gap: 1.2cqw;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        }
+        .s3-cons-icon {
+            font-size: 1.6cqw;
+            line-height: 1;
+        }
+        .s3-cons-text strong {
+            font-size: 1.15cqw;
+            color: #111;
+            display: block;
+            margin-bottom: 0.3cqh;
+        }
+        .s3-cons-text p {
+            font-size: 0.9cqw;
+            color: var(--text-gray);
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        /* --- Slide 4: Good Example --- */
+        .diagram-s4 {
+            width: 90%;
+            height: 90%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .s4-card {
+            background: #f0fdf4;
+            border: 2px solid #bbf7d0;
+            border-radius: 12px;
+            padding: 2cqh 2cqw;
+            box-shadow: var(--card-shadow);
+        }
+        .s4-card-header {
+            font-size: 0.9cqw;
+            font-weight: 800;
+            color: #166534;
+            text-transform: uppercase;
+            margin-bottom: 1cqh;
+            letter-spacing: 0.5px;
+        }
+        .s4-card-code {
+            font-family: 'Outfit', 'Fira Code', 'Courier New', Courier, monospace;
+            font-size: 0.95cqw;
+            font-weight: 500;
+            color: #abb2bf;
+            background: #1e1e1e;
+            padding: 1.5cqh 1.8cqw;
+            border-radius: 8px;
+            border: 1px solid #bbf7d0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            line-height: 1.5;
+            text-align: left;
+        }
+        /* YAML syntax highlighting */
+        .yaml-dash { color: #6a9955; font-weight: bold; }
+        .yaml-key { color: #9cdcfe; font-weight: 600; }
+        .yaml-colon { color: #d4d4d4; margin-right: 0.5cqw; }
+        .yaml-val-str { color: #ce9178; word-break: break-all; }
+        .yaml-line {
+            display: block;
+            margin-bottom: 0.2cqh;
+        }
+        .s4-benefits {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5cqh;
+        }
+        .s4-ben-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.5cqh 1.5cqw;
+            display: flex;
+            align-items: flex-start;
+            gap: 1.2cqw;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        }
+        .s4-ben-icon {
+            font-size: 1.6cqw;
+            line-height: 1;
+        }
+        .s4-ben-text strong {
+            font-size: 1.15cqw;
+            color: #111;
+            display: block;
+            margin-bottom: 0.3cqh;
+        }
+        .s4-ben-text p {
+            font-size: 0.9cqw;
+            color: var(--text-gray);
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        /* --- Slide 5: Best Practice Grid --- */
+        .diagram-s5 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.8cqw;
+            width: 100%;
+            height: 85%;
+        }
+        .s5-card {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2cqh 1.8cqw;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .s5-card.active {
+            border-top: 4px solid var(--secondary-color);
+        }
+        .s5-num {
+            position: absolute;
+            top: 1cqh;
+            right: 1.2cqw;
+            font-family: 'Outfit', sans-serif;
+            font-size: 2cqw;
+            font-weight: 900;
+            color: #f1f5f9;
+            line-height: 1;
+        }
+        .s5-card.active .s5-num {
+            color: rgba(37, 186, 233, 0.1);
+        }
+        .s5-label {
+            font-size: 1.15cqw;
+            font-weight: 800;
+            color: #111;
+            margin-bottom: 0.6cqh;
+            display: flex;
+            align-items: center;
+            gap: 0.5cqw;
+        }
+        .s5-desc {
+            font-size: 0.85cqw;
+            color: var(--text-gray);
+            line-height: 1.4;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="slide-container">
+
+        <!-- ==================== SLIDE 1: OVERVIEW ==================== -->
+        <div class="slide slide1 active theme-yellow" id="slide1">
+            <div class="title-area">
+                <h2><span class="title-badge">ROUTING</span>descriptionの役割と判断フロー</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">AIに向けた「ルーティング指示書」</div>
+                            <div class="point-desc">人間用の解説メモではなく、親モデル（Claude）に「どのような場面で自分に処理を委譲すべきか」を伝える重要なデータです。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">あらかじめ決められた固定ルールはなし</div>
+                            <div class="point-desc">「このキーワードが含まれていたらこのエージェントを呼ぶ」といった静的なルーティングルールはClaude Code内に存在しません。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">動的な判断による自律委譲</div>
+                            <div class="point-desc">親エージェントがユーザーのタスク内容と各サブエージェントの説明文を毎回照合し、必要だと判断した時のみ動的に呼び出します。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s1">
+                        <div class="s1-header">
+                            🔄 動的委譲（ルーティング）のプロセス
+                        </div>
+                        <div class="s1-flow">
+                            <div class="s1-step">
+                                <span class="s1-icon">💬</span>
+                                <div class="s1-text"><strong>ユーザーの指示:</strong> 「バグを直して」</div>
+                            </div>
+                            <div class="s1-arrow">⬇️ 照合</div>
+                            <div class="s1-step highlight">
+                                <span class="s1-icon">🧠</span>
+                                <div class="s1-text">
+                                    <strong>親モデルの判断:</strong><br>
+                                    「型安全性チェッカーの description と合致するぞ」
+                                </div>
+                            </div>
+                            <div class="s1-arrow">⬇️ 委譲</div>
+                            <div class="s1-step">
+                                <span class="s1-icon">🤖</span>
+                                <div class="s1-text"><strong>サブエージェント自律起動！</strong></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 2: SPECIFICATION ==================== -->
+        <div class="slide slide2 theme-blue" id="slide2">
+            <div class="title-area">
+                <h2><span class="title-badge">CONTEXT</span>コンテキストフットプリントと文字数</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">メインの会話へ常時読み込み</div>
+                            <div class="point-desc">すべてのサブエージェントの `description` は、親モデルがいつでも呼び出せるよう、親エージェントのメインコンテキストへ常時読み込まれます。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">長すぎる説明文はコンテキストを圧迫</div>
+                            <div class="point-desc">関係ないタスク中であっても、長大な説明文が存在するだけでトークンを消費し、親エージェントの利用コスト増加や処理の遅延を招きます。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">「短く、かつ正確」が設計の鉄則</div>
+                            <div class="point-desc">無駄な語句を削ぎ落とし、親モデルが最も正確に条件を判断できる「最小限の判断材料」として説明文を凝縮する必要があります。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s2">
+                        <div class="s2-bucket-wrap good">
+                            <div class="s2-bucket-label">🟢 良い設計 (短く正確)</div>
+                            <div class="s2-bucket">
+                                <div class="s2-fill description">記述量: 最小限 (20%)</div>
+                                <div class="s2-fill free">会話の余白 (広々!)</div>
+                            </div>
+                        </div>
+                        <div class="s2-bucket-wrap bad">
+                            <div class="s2-bucket-label">🔴 悪い設計 (長すぎる)</div>
+                            <div class="s2-bucket">
+                                <div class="s2-fill description">記述量: 圧迫 (65%)</div>
+                                <div class="s2-fill free">余白少 (コスト増)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 3: COMPARISON - BAD ==================== -->
+        <div class="slide slide3 theme-blue" id="slide3">
+            <div class="title-area">
+                <h2><span class="title-badge">BAD EXAMPLE</span>悪い例：曖昧すぎる description</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">具体的な条件のない短い文</div>
+                            <div class="point-desc">「コードをレビューする」というような、役割のみを大雑把に書いた説明文は、モデルにとって曖昧な指示になります。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">問題1：ルーティングの迷走（起動しない）</div>
+                            <div class="point-desc">いつ起動すべきかの基準（トリガー）が分からないため、親モデルが迷い、自動委譲されにくくなります（名前で指名が必要になる）。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">問題2：無関係な場面での誤作動</div>
+                            <div class="point-desc">単純な置換や検索といったレビュー不要のタスクでも「コードを見るから」と判断され、無意味にエージェントが起動してしまいます。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s3">
+                        <div class="s3-card">
+                            <div class="s3-card-header">❌ 曖昧な記述</div>
+                            <div class="s3-card-code">
+                                <div class="yaml-line"><span class="yaml-dash">---</span></div>
+                                <div class="yaml-line"><span class="yaml-key">description</span><span class="yaml-colon">:</span> <span class="yaml-val-str">"コードをレビューする（reviews code.）"</span></div>
+                                <div class="yaml-line"><span class="yaml-dash">---</span></div>
+                            </div>
+                        </div>
+                        <div class="s3-consequences">
+                            <div class="s3-cons-item">
+                                <span class="s3-cons-icon">❓</span>
+                                <div class="s3-cons-text">
+                                    <strong>判断の迷走</strong>
+                                    <p>起動すべきか確信が持てず、自律的に起動しなくなる</p>
+                                </div>
+                            </div>
+                            <div class="s3-cons-item">
+                                <span class="s3-cons-icon">⚠️</span>
+                                <div class="s3-cons-text">
+                                    <strong>無駄な誤作動</strong>
+                                    <p>簡単な置換タスクなど、不要な時にも起動しコストを浪費</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 4: COMPARISON - GOOD ==================== -->
+        <div class="slide slide4 theme-blue" id="slide4">
+            <div class="title-area">
+                <h2><span class="title-badge">GOOD EXAMPLE</span>良い例：明確なトリガーと詳細</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">起動条件・検査対象・成果物を明記</div>
+                            <div class="point-desc">タイミング、扱う内容、親エージェントにどう結果を返すかまで具体的に指示します。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">解決1：極めて安定した自動ルーティング</div>
+                            <div class="point-desc">「コードを変更した直後」と書くことで、開発作業が終わった最適なタイミングのみを狙って正確に自動起動するようになります。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">解決2：自律委譲の強いプロンプト</div>
+                            <div class="point-desc">「指示がなくても積極的に〜」と最後に書き添えることで、親エージェントがコミット前などに自律的に検査を実行することを促します。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s4">
+                        <div class="s4-card">
+                            <div class="s4-card-header">🟢 精密な記述</div>
+                            <div class="s4-card-code">
+                                <div class="yaml-line"><span class="yaml-dash">---</span></div>
+                                <div class="yaml-line"><span class="yaml-key">description</span><span class="yaml-colon">:</span> <span class="yaml-val-str">"コードを変更した直後に使用する。TypeScriptの型安全性とアクセシビリティを検査し、重要度付きのレポートを返す。指示がなくても積極的に使用すること。"</span></div>
+                                <div class="yaml-line"><span class="yaml-dash">---</span></div>
+                            </div>
+                        </div>
+                        <div class="s4-benefits">
+                            <div class="s4-ben-item">
+                                <span class="s4-ben-icon">🎯</span>
+                                <div class="s4-ben-text">
+                                    <strong>正確なピンポイント起動</strong>
+                                    <p>「コード編集後」のタイミングに限定して安定動作</p>
+                                </div>
+                            </div>
+                            <div class="s4-ben-item">
+                                <span class="s4-ben-icon">🚀</span>
+                                <div class="s4-ben-text">
+                                    <strong>自律的委譲の促進</strong>
+                                    <p>親エージェントがタスクの合間に自主的に委譲を決定</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 5: BEST PRACTICE ==================== -->
+        <div class="slide slide5 theme-yellow" id="slide5">
+            <div class="title-area">
+                <h2><span class="title-badge">TEMPLATE</span>高精度な委譲を実現する4大要素</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">自動ルーティング精度を高めるテンプレート</div>
+                            <div class="point-desc">自作のカスタムサブエージェントに書く `description` は、右側の4つの観点を盛り込んで記述するのがベストプラクティスです。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">親モデルのための「委譲ルール指示書」</div>
+                            <div class="point-desc">この4要素がコンパクトにまとまっていることで、親のコンテキストを圧迫せず、かつ正確で無駄のない自律制御が可能になります。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">真の自律型マルチエージェントへ</div>
+                            <div class="point-desc">適切な説明文設計こそが、モデル間の協調動作をシームレスにつなぐ接着剤となります。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s5">
+                        <div class="s5-card active">
+                            <span class="s5-num">01</span>
+                            <div class="s5-label">⏱️ トリガー (When)</div>
+                            <p class="s5-desc">いつ起動すべきか、発生イベントや動作タイミングを明記する。</p>
+                        </div>
+                        <div class="s5-card active">
+                            <span class="s5-num">02</span>
+                            <div class="s5-label">🛠️ アクション (What)</div>
+                            <p class="s5-desc">何をするのか、担当する専門の処理内容を定義する。</p>
+                        </div>
+                        <div class="s5-card active">
+                            <span class="s5-num">03</span>
+                            <div class="s5-label">📦 アウトプット (How)</div>
+                            <p class="s5-desc">親に返す成果物やメッセージの仕様について指定する。</p>
+                        </div>
+                        <div class="s5-card active">
+                            <span class="s5-num">04</span>
+                            <div class="s5-label">⚡ 積極性 (Proactive)</div>
+                            <p class="s5-desc">指示がなくても、親が自律判断して積極的に呼ぶよう促す。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ==================== 共通ナビゲーションUI ==================== -->
+    <div class="nav-info">
+        <div class="slide-counter" id="counter">1 / 5</div>
+    </div>
+
+    <!-- JavaScript for Slideshow Control -->
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 5;
+
+        function showSlide(slideNumber) {
+            // 現在のアクティブスライドを非表示
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+
+            // 新しいスライドを表示
+            document.getElementById(`slide${slideNumber}`).classList.add('active');
+            
+            // スライドのテーマに応じてカウンターの親のデザインを変えたい場合などの調整
+            const slideEl = document.getElementById(`slide${slideNumber}`);
+            const counterEl = document.getElementById('counter');
+            
+            // カウンターテキストの更新
+            counterEl.innerText = `${slideNumber} / ${totalSlides}`;
+            currentSlide = slideNumber;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        function firstSlide() {
+            showSlide(1);
+        }
+
+        function lastSlide() {
+            showSlide(totalSlides);
+        }
+
+        document.addEventListener('keydown', function(event) {
+            // 入力中などの場合はイベントをスルー
+            if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            switch(event.key) {
+                case 'ArrowRight':
+                case ' ':
+                    event.preventDefault();
+                    nextSlide();
+                    break;
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    prevSlide();
+                    break;
+                case 'Home':
+                    event.preventDefault();
+                    firstSlide();
+                    break;
+                case 'End':
+                    event.preventDefault();
+                    lastSlide();
+                    break;
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                    event.preventDefault();
+                    const slideNum = parseInt(event.key);
+                    if (slideNum >= 1 && slideNum <= totalSlides) {
+                        showSlide(slideNum);
+                    }
+                    break;
+            }
+        });
+
+        // 初期ロード時に1ページ目を表示
+        showSlide(1);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1491 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      2-1.5 サブエージェントがコンテキストの汚染を防げる理由 - Udemy講座スライド
+    </title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Outfit:wght@400;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* --- CSS Reset & Variables --- */
+      :root {
+        --primary-color: #ffd600; /* メイン黄色 */
+        --secondary-color: #25bae9; /* サブ青色 */
+        --text-black: #333333; /* メインテキスト */
+        --background-gray: #eff3f4; /* 背景グレー */
+        --white: #ffffff; /* 白背景・テキスト */
+        --text-gray: #555555;
+        --border-color: rgba(0, 0, 0, 0.08);
+        --card-shadow: 0 12px 40px rgba(0, 0, 0, 0.04);
+        --transition-speed: 0.3s;
+
+        /* 追加の配色 */
+        --accent-green: #4caf50;
+        --accent-red: #ff5252;
+        --accent-purple: #b388ff;
+        --accent-orange: #ff9100;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo,
+          sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #111111;
+        color: var(--text-black);
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      /* --- 16:9 Aspect Ratio Slide Container --- */
+      .slide-container {
+        width: 90vw;
+        height: 50.625vw; /* 9/16 * 90vw */
+        max-width: 1600px;
+        max-height: 900px;
+        position: relative;
+        background-color: var(--white);
+        box-shadow: 0 25px 70px rgba(0, 0, 0, 0.6);
+        border-radius: 12px;
+        overflow: hidden;
+        container-type: size;
+        container-name: slide;
+      }
+
+      /* Vertical viewport adjustments */
+      @media (max-aspect-ratio: 16/9) {
+        .slide-container {
+          width: 177.78vh; /* 16/9 * 90vh */
+          height: 90vh;
+        }
+      }
+
+      /* --- Individual Slide Wrapper --- */
+      .slide {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: flex;
+        flex-direction: column;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity var(--transition-speed) ease;
+        background-color: var(--white);
+        z-index: 1;
+      }
+
+      .slide.active {
+        opacity: 1;
+        pointer-events: auto;
+        z-index: 2;
+      }
+
+      /* Theme Styling options */
+      .slide.theme-blue {
+        background-color: var(--white);
+      }
+
+      .slide.theme-yellow {
+        background-color: var(--background-gray);
+      }
+
+      /* --- Title Area (Header 15%) --- */
+      .title-area {
+        height: 15cqh;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        padding: 0 4cqw;
+        position: relative;
+      }
+
+      .slide.theme-yellow .title-area {
+        background-color: var(--primary-color);
+      }
+
+      .slide.theme-blue .title-area {
+        background-color: var(--secondary-color);
+        color: var(--white);
+      }
+
+      .title-area h2 {
+        margin: 0;
+        font-size: 2.6cqw;
+        font-weight: 900;
+        letter-spacing: -0.5px;
+        display: flex;
+        align-items: center;
+        gap: 1.5cqw;
+      }
+
+      .title-badge {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.05cqw;
+        font-weight: 800;
+        background-color: rgba(255, 255, 255, 0.35);
+        color: inherit;
+        padding: 0.4cqh 1.2cqw;
+        border-radius: 30px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .slide.theme-yellow .title-badge {
+        background-color: rgba(0, 0, 0, 0.08);
+        color: var(--text-black);
+      }
+
+      /* --- Main Content Area --- */
+      .main-content {
+        flex: 1;
+        display: flex;
+        padding: 4cqh 4cqw 6cqh 4cqw;
+        gap: 4cqw;
+        overflow: hidden;
+      }
+
+      .left-panel {
+        width: 48%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 3cqh;
+      }
+
+      .right-panel {
+        width: 52%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+
+      /* Bullet Points */
+      .points-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 3.5cqh;
+      }
+
+      .points-list li {
+        position: relative;
+        padding-left: 2.5cqw;
+      }
+
+      .points-list li::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0.7cqh;
+        width: 1.2cqw;
+        height: 1.2cqw;
+        border-radius: 50%;
+      }
+
+      .slide.theme-yellow .points-list li::before {
+        background-color: var(--secondary-color);
+      }
+
+      .slide.theme-blue .points-list li::before {
+        background-color: var(--primary-color);
+      }
+
+      .point-title {
+        font-size: 1.45cqw;
+        font-weight: 700;
+        color: #111111;
+        margin-bottom: 0.6cqh;
+      }
+
+      .point-desc {
+        font-size: 1.05cqw;
+        color: var(--text-gray);
+        line-height: 1.55;
+        margin: 0;
+      }
+
+      /* --- Navigation Counter Floating --- */
+      .nav-info {
+        position: absolute;
+        bottom: 20px;
+        left: 5%;
+        right: 5%;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        font-size: 0.95rem;
+        color: #888;
+        pointer-events: none;
+        z-index: 100;
+      }
+
+      .slide-counter {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 700;
+        font-size: 1.1rem;
+        background: rgba(0, 0, 0, 0.05);
+        padding: 4px 12px;
+        border-radius: 20px;
+      }
+
+      .slide.theme-blue .slide-counter {
+        background: rgba(0, 0, 0, 0.05);
+      }
+
+      .slide.theme-yellow .slide-counter {
+        background: rgba(255, 255, 255, 0.6);
+      }
+
+      /* ==========================================================================
+           SLIDE-SPECIFIC CUSTOM DIAGRAM STYLES
+           ========================================================================== */
+
+      /* AI Characters & Elements */
+      .char-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1cqh;
+        z-index: 10;
+      }
+
+      .char-avatar {
+        width: 7cqw;
+        height: 7cqw;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3.5cqw;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+        border: 4px solid var(--white);
+      }
+
+      .char-box.parent .char-avatar {
+        background: #e3f2fd;
+        border-color: var(--secondary-color);
+      }
+
+      .char-box.child .char-avatar {
+        background: #fffde7;
+        border-color: var(--primary-color);
+      }
+
+      .char-label {
+        font-size: 1cqw;
+        font-weight: 800;
+        background: rgba(0, 0, 0, 0.05);
+        padding: 2px 10px;
+        border-radius: 6px;
+      }
+
+      /* --- Slide 1 Diagram: The Partition --- */
+      .diagram-s1 {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        position: relative;
+      }
+
+      .s1-wall {
+        width: 6px;
+        height: 80%;
+        background: repeating-linear-gradient(
+          45deg,
+          #b0bec5,
+          #b0bec5 10px,
+          #eceff1 10px,
+          #eceff1 20px
+        );
+        border-radius: 10px;
+        position: relative;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      }
+
+      .s1-wall::after {
+        content: '仕切り (隔離)';
+        position: absolute;
+        top: 5%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #b0bec5;
+        color: var(--white);
+        font-size: 0.8cqw;
+        font-weight: 800;
+        padding: 2px 8px;
+        border-radius: 4px;
+        white-space: nowrap;
+      }
+
+      .s1-memo-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5cqh;
+      }
+
+      .s1-memo-sheet {
+        background: var(--white);
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1.5cqh 1.2cqw;
+        width: 15cqw;
+        box-shadow: var(--card-shadow);
+        position: relative;
+      }
+
+      .s1-memo-sheet.full::after {
+        content: '情報がびっしり';
+        position: absolute;
+        top: -1cqh;
+        right: -1cqw;
+        background: var(--accent-orange);
+        color: var(--white);
+        font-size: 0.75cqw;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+
+      .s1-memo-sheet.empty::after {
+        content: '覗き見不可 🚫';
+        position: absolute;
+        top: -1cqh;
+        right: -1cqw;
+        background: var(--accent-red);
+        color: var(--white);
+        font-size: 0.75cqw;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+
+      .s1-memo-title {
+        font-size: 0.95cqw;
+        font-weight: 800;
+        margin-bottom: 0.8cqh;
+        color: #555;
+        border-bottom: 1px solid var(--background-gray);
+        padding-bottom: 0.4cqh;
+      }
+
+      .s1-lines {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6cqh;
+      }
+
+      .s1-line {
+        height: 6px;
+        background: #eceff1;
+        border-radius: 3px;
+      }
+
+      .s1-line.colored {
+        background: var(--secondary-color);
+        width: 75%;
+      }
+
+      .s1-line.colored-2 {
+        background: var(--primary-color);
+        width: 60%;
+      }
+
+      .s1-no-entry {
+        position: absolute;
+        font-size: 2.5cqw;
+        color: var(--accent-red);
+        top: 45%;
+        left: 38%;
+        z-index: 20;
+      }
+
+      /* --- Slide 2 Diagram: 4 Handed Informations --- */
+      .diagram-s2 {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 2cqh;
+      }
+
+      .s2-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2cqh 1.5cqw;
+      }
+
+      .s2-info-card {
+        background: var(--white);
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        padding: 2cqh 1.5cqw;
+        display: flex;
+        align-items: center;
+        gap: 1.2cqw;
+        box-shadow: var(--card-shadow);
+        position: relative;
+      }
+
+      .s2-info-card.disabled {
+        background: rgba(255, 255, 255, 0.5);
+        border-style: dashed;
+        opacity: 0.8;
+      }
+
+      .s2-info-card.disabled::after {
+        position: absolute;
+        bottom: 4px;
+        right: 12px;
+        font-size: 0.75cqw;
+        color: var(--accent-red);
+        font-weight: 700;
+      }
+
+      .s2-card-icon {
+        width: 3.5cqw;
+        height: 3.5cqw;
+        border-radius: 50%;
+        background: #e1f5fe;
+        color: var(--secondary-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.6cqw;
+        flex-shrink: 0;
+      }
+
+      .s2-info-card.disabled .s2-card-icon {
+        background: #efebe9;
+        color: #795548;
+      }
+
+      .s2-card-texts {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .s2-card-num {
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.8cqw;
+        font-weight: 900;
+        color: var(--secondary-color);
+      }
+
+      .s2-info-card.disabled .s2-card-num {
+        color: #795548;
+      }
+
+      .s2-card-title {
+        font-size: 1.15cqw;
+        font-weight: 800;
+        color: var(--text-black);
+      }
+
+      /* --- Slide 3 Diagram: Start Empty, Accumulate --- */
+      #slide3 .left-panel {
+        width: 38%;
+      }
+
+      #slide3 .right-panel {
+        width: 62%;
+      }
+
+      .diagram-s3 {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+      }
+
+      .s3-step {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 29%;
+      }
+
+      .s3-step-label {
+        position: absolute;
+        top: 0;
+        transform: translateY(-50%);
+        z-index: 10;
+        font-size: 0.9cqw;
+        font-weight: 800;
+        color: var(--white);
+        background: var(--text-black);
+        padding: 4px 14px;
+        border-radius: 20px;
+        white-space: nowrap;
+      }
+
+      .s3-step-card {
+        background: var(--white);
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        padding: 3.5cqh 1.5cqw 2.5cqh 1.5cqw;
+        width: 100%;
+        height: 27cqh;
+        box-shadow: var(--card-shadow);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.2cqh;
+        position: relative;
+      }
+
+      .s3-icon-large {
+        font-size: 3cqw;
+        flex-shrink: 0;
+      }
+
+      .s3-step-text {
+        font-size: 1.05cqw;
+        font-weight: 800;
+        text-align: center;
+        flex-shrink: 0;
+      }
+
+      .s3-step-subtext {
+        font-size: 0.8cqw;
+        color: var(--text-gray);
+        text-align: center;
+        flex-shrink: 0;
+        line-height: 1.4;
+      }
+
+      .s3-flow-arrow {
+        width: 3cqw;
+        height: 3cqw;
+        color: var(--secondary-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+
+      .s3-flow-arrow svg {
+        width: 100%;
+        height: 100%;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 3.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .s3-token-bar {
+        width: 80%;
+        height: 1.2cqh;
+        background: #e0e0e0;
+        border-radius: 6px;
+        overflow: hidden;
+        margin-top: 1cqh;
+        flex-shrink: 0;
+      }
+
+      .s3-token-progress {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          var(--secondary-color),
+          var(--accent-orange)
+        );
+        border-radius: 6px;
+        animation: pulse-width 2s infinite alternate;
+      }
+
+      @keyframes pulse-width {
+        0% {
+          width: 30%;
+        }
+        100% {
+          width: 100%;
+        }
+      }
+
+      /* --- Slide 4 Diagram: Comparison (Main vs Sub) --- */
+      .diagram-s4 {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        gap: 2cqw;
+        align-items: center;
+      }
+
+      .s4-col {
+        width: 50%;
+        height: 85%;
+        background: var(--white);
+        border: 2px solid var(--border-color);
+        border-radius: 16px;
+        padding: 3cqh 2cqw;
+        box-shadow: var(--card-shadow);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+      }
+
+      .s4-col.bad-case {
+        border-top: 8px solid var(--accent-red);
+      }
+
+      .s4-col.good-case {
+        border-top: 8px solid var(--accent-green);
+      }
+
+      .s4-badge {
+        position: absolute;
+        top: -1.8cqh;
+        left: 2cqw;
+        font-size: 0.9cqw;
+        font-weight: 900;
+        color: var(--white);
+        padding: 4px 14px;
+        border-radius: 6px;
+      }
+
+      .s4-col.bad-case .s4-badge {
+        background: var(--accent-red);
+      }
+
+      .s4-col.good-case .s4-badge {
+        background: var(--accent-green);
+      }
+
+      .s4-title {
+        font-size: 1.2cqw;
+        font-weight: 900;
+        margin-bottom: 1.5cqh;
+        margin-top: 1cqh;
+      }
+
+      .s4-visual {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1.5cqw;
+        height: 16cqh;
+        background: var(--background-gray);
+        border-radius: 12px;
+        padding: 1cqh;
+        margin-bottom: 1.5cqh;
+      }
+
+      .s4-memo-pile {
+        position: relative;
+        width: 5cqw;
+        height: 6cqh;
+      }
+
+      .s4-memo-leaf {
+        position: absolute;
+        background: var(--white);
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        width: 4cqw;
+        height: 5cqh;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      }
+
+      .s4-memo-leaf:nth-child(1) {
+        transform: rotate(-5deg) translate(0, 0);
+      }
+      .s4-memo-leaf:nth-child(2) {
+        transform: rotate(3deg) translate(4px, -4px);
+      }
+      .s4-memo-leaf:nth-child(3) {
+        transform: rotate(-2deg) translate(8px, -8px);
+      }
+      .s4-memo-leaf:nth-child(4) {
+        transform: rotate(5deg) translate(12px, -12px);
+        background: #ffebee;
+        border-color: #ffcdd2;
+      }
+
+      .s4-memo-leaf.giant {
+        width: 4.5cqw;
+        height: 9cqh;
+        background: #ffebee;
+        border-color: var(--accent-red);
+        box-shadow: 0 4px 10px rgba(255, 82, 82, 0.15);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75cqw;
+        font-weight: 800;
+        color: var(--accent-red);
+      }
+
+      .s4-desc-text {
+        font-size: 0.95cqw;
+        line-height: 1.5;
+        color: var(--text-gray);
+        font-weight: 500;
+      }
+
+      .s4-desc-text strong {
+        color: var(--text-black);
+        font-weight: 800;
+      }
+
+      /* --- Slide 5 Diagram: 4 Problems Grid --- */
+      .diagram-s5 {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2.5cqh 2cqw;
+        align-content: center;
+      }
+
+      .s5-prob-card {
+        background: var(--white);
+        border: 2px solid #ffcdd2;
+        border-left: 6px solid var(--accent-red);
+        border-radius: 12px;
+        padding: 2cqh 1.5cqw;
+        display: flex;
+        align-items: center;
+        gap: 1.2cqw;
+        box-shadow: var(--card-shadow);
+      }
+
+      .s5-prob-icon {
+        font-size: 2.5cqw;
+        flex-shrink: 0;
+      }
+
+      .s5-prob-texts {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .s5-prob-title {
+        font-size: 1.2cqw;
+        font-weight: 900;
+        color: #b71c1c;
+      }
+
+      .s5-prob-desc {
+        font-size: 0.9cqw;
+        color: var(--text-gray);
+        font-weight: 500;
+        line-height: 1.4;
+      }
+
+      /* --- Slide 6 Diagram: Funnel (Process vs Storage) --- */
+      .diagram-s6 {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+
+      .s6-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 22cqw;
+        position: relative;
+      }
+
+      .s6-input-label {
+        font-size: 0.95cqw;
+        font-weight: 900;
+        background: var(--accent-orange);
+        color: var(--white);
+        padding: 4px 12px;
+        border-radius: 20px;
+        margin-bottom: 1.5cqh;
+        white-space: nowrap;
+      }
+
+      /* Funnel wrapper and SVG styling */
+      .s6-funnel-wrapper {
+        position: relative;
+        width: 16cqw;
+        height: 16cqh;
+        margin-bottom: 1cqh;
+        display: flex;
+        justify-content: center;
+      }
+
+      .s6-funnel-svg {
+        width: 100%;
+        height: 100%;
+        fill: none;
+        stroke: #90a4ae;
+        stroke-width: 3;
+        stroke-linecap: round;
+      }
+
+      .s6-funnel-fill {
+        fill: rgba(37, 186, 233, 0.1);
+      }
+
+      .s6-funnel-particles {
+        position: absolute;
+        top: 15%;
+        width: 80%;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 4px;
+      }
+
+      .s6-particle {
+        font-size: 0.8cqw;
+        background: var(--white);
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-weight: 700;
+      }
+
+      .s6-narrow-exit {
+        font-size: 2cqw;
+        color: var(--accent-green);
+        margin: 1cqh 0;
+        font-weight: bold;
+      }
+
+      .s6-exit-label {
+        font-size: 0.95cqw;
+        font-weight: 900;
+        background: var(--accent-green);
+        color: var(--white);
+        padding: 4px 12px;
+        border-radius: 20px;
+        margin-top: 0.5cqh;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide-container">
+      <!-- ==================== SLIDE 1 ==================== -->
+      <div class="slide theme-blue active" id="slide1">
+        <div class="title-area">
+          <h2>
+            <span class="title-badge">Concept</span
+            >コンテキストの汚染を防げる理由
+          </h2>
+        </div>
+        <div class="main-content">
+          <div class="left-panel">
+            <ul class="points-list">
+              <li>
+                <div class="point-title">
+                  メモ用紙に「はっきりした仕切り」を作る
+                </div>
+                <p class="point-desc">
+                  親であるメインのAIと、子であるサブエージェントの間で、お互いのメモ用紙（会話ログ等）を勝手に見せない壁を作ります。
+                </p>
+              </li>
+              <li>
+                <div class="point-title">メインの会話履歴は子に渡らない</div>
+                <p class="point-desc">
+                  メインAI側のこれまでの会話のやり取り、実行したツールの結果・指示書は、サブエージェントに一切渡りません。
+                </p>
+              </li>
+              <li>
+                <div class="point-title">覗き見すらできない隔離環境</div>
+                <p class="point-desc">
+                  サブエージェントは完全に別室（隔離されたコンテキスト）で動き出すため、メインの記憶を汚すことがありません。
+                </p>
+              </li>
+            </ul>
+          </div>
+          <div class="right-panel">
+            <div class="diagram-s1">
+              <!-- Main AI (Parent) -->
+              <div class="s1-memo-container">
+                <div class="char-box parent">
+                  <div class="char-avatar">🤖</div>
+                  <div class="char-label">メインAI (親)</div>
+                </div>
+                <div class="s1-memo-sheet full">
+                  <div class="s1-memo-title">メインのメモ用紙</div>
+                  <div class="s1-lines">
+                    <div class="s1-line colored"></div>
+                    <div class="s1-line"></div>
+                    <div class="s1-line colored-2"></div>
+                    <div class="s1-line"></div>
+                    <div class="s1-line"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Barrier Wall -->
+              <div class="s1-wall"></div>
+              <div class="s1-no-entry">🚫</div>
+
+              <!-- Sub Agent (Child) -->
+              <div class="s1-memo-container">
+                <div class="char-box child">
+                  <div class="char-avatar">🕵️</div>
+                  <div class="char-label">サブエージェント (子)</div>
+                </div>
+                <div class="s1-memo-sheet empty">
+                  <div class="s1-memo-title">隔離メモ用紙</div>
+                  <div class="s1-lines">
+                    <div class="s1-line"></div>
+                    <div class="s1-line"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== SLIDE 2 ==================== -->
+      <div class="slide theme-yellow" id="slide2">
+        <div class="title-area">
+          <h2>
+            <span class="title-badge">Data Flow</span
+            >親から子へ引き継がれる4つの情報
+          </h2>
+        </div>
+        <div class="main-content">
+          <div class="left-panel">
+            <ul class="points-list">
+              <li>
+                <div class="point-title">
+                  必要最低限のデータだけを厳選して渡す
+                </div>
+                <p class="point-desc">
+                  メインAIの膨大な会話履歴は遮断しますが、作業に必要な最小限の「4つの情報」だけを引き継いで子を起動します。
+                </p>
+              </li>
+              <li>
+                <div class="point-title">
+                  一部のサブエージェントではさらに情報を節約
+                </div>
+                <p class="point-desc">
+                  特定の役割ではルールや変更状況の引き継ぎすらカットします。
+                </p>
+              </li>
+            </ul>
+          </div>
+          <div class="right-panel">
+            <div class="diagram-s2">
+              <div class="s2-cards-grid">
+                <!-- Card 1 -->
+                <div class="s2-info-card">
+                  <div class="s2-card-icon">📝</div>
+                  <div class="s2-card-texts">
+                    <div class="s2-card-num">INFO 01</div>
+                    <div class="s2-card-title">お願いの文章 (指示)</div>
+                  </div>
+                </div>
+                <!-- Card 2 -->
+                <div class="s2-info-card">
+                  <div class="s2-card-icon">📂</div>
+                  <div class="s2-card-texts">
+                    <div class="s2-card-num">INFO 02</div>
+                    <div class="s2-card-title">作業場所の環境情報</div>
+                  </div>
+                </div>
+                <!-- Card 3 -->
+                <div class="s2-info-card disabled">
+                  <div class="s2-card-icon">📜</div>
+                  <div class="s2-card-texts">
+                    <div class="s2-card-num">INFO 03</div>
+                    <div class="s2-card-title">プロジェクトの独自ルール</div>
+                  </div>
+                </div>
+                <!-- Card 4 -->
+                <div class="s2-info-card disabled">
+                  <div class="s2-card-icon">🔄</div>
+                  <div class="s2-card-texts">
+                    <div class="s2-card-num">INFO 04</div>
+                    <div class="s2-card-title">ファイルの現在の変更履歴</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== SLIDE 3 ==================== -->
+      <div class="slide theme-blue" id="slide3">
+        <div class="title-area">
+          <h2>
+            <span class="title-badge">Process</span
+            >隔離されたメモとトークンの増加
+          </h2>
+        </div>
+        <div class="main-content">
+          <div class="left-panel">
+            <ul class="points-list">
+              <li>
+                <div class="point-title">
+                  まっさらなメモ帳から作業をスタート
+                </div>
+                <p class="point-desc">
+                  渡されたわずかな情報以外は「白紙」の状態で、サブエージェントは自分自身の新しいメモ帳を広げて動き出します。
+                </p>
+              </li>
+              <li>
+                <div class="point-title">
+                  試行錯誤する中で「トークン」が急増
+                </div>
+                <p class="point-desc">
+                  ファイルを大量に読み込んだり、検索やコマンド実行のエラーと戦いながら、メモ帳の文字量（＝トークン）はどんどん膨らみます。
+                </p>
+              </li>
+              <li>
+                <div class="point-title">
+                  トークンは「文字数を数えるものさし」
+                </div>
+                <p class="point-desc">
+                  AIが処理する情報の量を表す単位です。どんなにメモが肥大化しても、それはサブエージェント専用のメモ帳の中だけの話です。
+                </p>
+              </li>
+            </ul>
+          </div>
+          <div class="right-panel">
+            <div class="diagram-s3">
+              <!-- Step 1 -->
+              <div class="s3-step">
+                <div class="s3-step-label">1. 起動時</div>
+                <div class="s3-step-card">
+                  <div class="s3-icon-large">📄</div>
+                  <div class="s3-step-text">白紙のメモ帳</div>
+                  <div class="s3-step-subtext">
+                    ほぼ何も書かれていない綺麗な状態
+                  </div>
+                </div>
+              </div>
+
+              <div class="s3-flow-arrow">
+                <svg viewBox="0 0 24 24">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </div>
+
+              <!-- Step 2 -->
+              <div class="s3-step">
+                <div class="s3-step-label">2. 作業中</div>
+                <div
+                  class="s3-step-card"
+                  style="border-color: var(--accent-orange)"
+                >
+                  <div class="s3-icon-large">🔍 💻 🛠️</div>
+                  <div class="s3-step-text">試行錯誤とデータ読込</div>
+                  <div class="s3-step-subtext">
+                    検索・実行・エラーログが積み重なる
+                  </div>
+                  <div class="s3-token-bar">
+                    <div class="s3-token-progress"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="s3-flow-arrow">
+                <svg viewBox="0 0 24 24">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </div>
+
+              <!-- Step 3 -->
+              <div class="s3-step">
+                <div class="s3-step-label">3. 終了時</div>
+                <div
+                  class="s3-step-card"
+                  style="border-color: var(--accent-red)"
+                >
+                  <div class="s3-icon-large">📚</div>
+                  <div class="s3-step-text">トークンの肥大化</div>
+                  <div class="s3-step-subtext">
+                    作業履歴でメモ帳はパンパンに
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== SLIDE 4 ==================== -->
+      <div class="slide theme-yellow" id="slide4">
+        <div class="title-area">
+          <h2>
+            <span class="title-badge">Comparison</span
+            >50ファイルの調査タスクでの数値比較
+          </h2>
+        </div>
+        <div class="main-content">
+          <div class="left-panel">
+            <ul class="points-list">
+              <li>
+                <div class="point-title">
+                  メインAIだけで作業すると「パンク」する
+                </div>
+                <p class="point-desc">
+                  50ファイルもの情報をメインAIが直接読み込むと、それだけで10万トークンが積み重なり、重要な前提指示を忘れてしまいます。
+                </p>
+              </li>
+              <li>
+                <div class="point-title">
+                  作業完了後、子側のメモ帳は「丸ごと破棄」
+                </div>
+                <p class="point-desc">
+                  サブエージェントが身代わりに10万トークンを消費し、作業完了とともにメモを処分します。メインには結果だけが伝わります。
+                </p>
+              </li>
+            </ul>
+          </div>
+          <div class="right-panel">
+            <div class="diagram-s4">
+              <!-- Left Panel: Bad Case -->
+              <div class="s4-col bad-case">
+                <div class="s4-badge">メインAIが直接調査</div>
+                <div class="s4-title">🧠 メインの脳に直接蓄積</div>
+                <div class="s4-visual">
+                  <div class="s4-memo-pile">
+                    <div class="s4-memo-leaf"></div>
+                    <div class="s4-memo-leaf"></div>
+                    <div class="s4-memo-leaf"></div>
+                    <div class="s4-memo-leaf"></div>
+                  </div>
+                  <div
+                    style="
+                      font-size: 2.2cqw;
+                      font-weight: 900;
+                      color: var(--accent-red);
+                    "
+                  >
+                    10万<br /><span style="font-size: 1.2cqw"
+                      >トークン蓄積</span
+                    >
+                  </div>
+                </div>
+                <div class="s4-desc-text">
+                  メモ帳が限界になり、<strong>「オートコンパクション（自動要約）」</strong>が早期に発生。重要な指示を忘れる。
+                </div>
+              </div>
+
+              <!-- Right Panel: Good Case -->
+              <div class="s4-col good-case">
+                <div class="s4-badge">サブエージェントを使用</div>
+                <div class="s4-title">🛡️ 隔離環境で作業し、破棄</div>
+                <div class="s4-visual">
+                  <div class="s4-memo-pile">
+                    <div class="s4-memo-leaf giant">10万<br />トークン</div>
+                  </div>
+                  <div style="font-size: 2.5cqw">➡️</div>
+                  <div style="font-size: 3cqw">🗑️</div>
+                </div>
+                <div class="s4-desc-text">
+                  10万トークンのゴミは<strong>すべて破棄</strong>。メインAIのメモは<strong>スカスカ（綺麗）</strong>のままで、指示を忘れない。
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== SLIDE 5 ==================== -->
+      <div class="slide theme-blue" id="slide5">
+        <div class="title-area">
+          <h2>
+            <span class="title-badge">Problems</span
+            >コンテキスト肥大化による4つの悪影響
+          </h2>
+        </div>
+        <div class="main-content">
+          <div class="left-panel">
+            <ul class="points-list">
+              <li>
+                <div class="point-title">
+                  「メモが分厚くなる」ことはデメリットだらけ
+                </div>
+                <p class="point-desc">
+                  AIにとって、会話の履歴や読み込んだデータ（コンテキスト）が膨大になりすぎることは、性能の致命的な低下に直結します。
+                </p>
+              </li>
+              <li>
+                <div class="point-title">
+                  サブエージェントはこれらを全て未然に防ぐ
+                </div>
+                <p class="point-desc">
+                  メインAIのコンテキストを常にクリーンに保ち、AIの処理精度とスピードを最高の状態に維持します。
+                </p>
+              </li>
+            </ul>
+          </div>
+          <div class="right-panel">
+            <div class="diagram-s5">
+              <!-- Problem 1 -->
+              <div class="s5-prob-card">
+                <div class="s5-prob-icon">🤥</div>
+                <div class="s5-prob-texts">
+                  <div class="s5-prob-title">ハルシネーション</div>
+                  <div class="s5-prob-desc">
+                    事実と異なる嘘の情報を、本当であるかのように話す確率が上がります。
+                  </div>
+                </div>
+              </div>
+              <!-- Problem 2 -->
+              <div class="s5-prob-card">
+                <div class="s5-prob-icon">🧠❓</div>
+                <div class="s5-prob-texts">
+                  <div class="s5-prob-title">指示の忘却</div>
+                  <div class="s5-prob-desc">
+                    最初に設定した前提条件や、大事なルールを途中で忘れてしまいます。
+                  </div>
+                </div>
+              </div>
+              <!-- Problem 3 -->
+              <div class="s5-prob-card">
+                <div class="s5-prob-icon">💸</div>
+                <div class="s5-prob-texts">
+                  <div class="s5-prob-title">利用コストの増加</div>
+                  <div class="s5-prob-desc">
+                    読み書きする文字数（トークン数）が爆発し、動作費用が跳ね上がります。
+                  </div>
+                </div>
+              </div>
+              <!-- Problem 4 -->
+              <div class="s5-prob-card">
+                <div class="s5-prob-icon">⏳</div>
+                <div class="s5-prob-texts">
+                  <div class="s5-prob-title">返答速度の低下</div>
+                  <div class="s5-prob-desc">
+                    処理するデータ量が多すぎるため、AIが返事を返すまでの時間が長くなります。
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== SLIDE 6 ==================== -->
+      <div class="slide theme-yellow" id="slide6">
+        <div class="title-area">
+          <h2>
+            <span class="title-badge">Summary</span
+            >作業量と記憶の「物理的な切り離し」
+          </h2>
+        </div>
+        <div class="main-content">
+          <div class="left-panel">
+            <ul class="points-list">
+              <li>
+                <div class="point-title">
+                  「複数のAI」によるマルチエージェント体制
+                </div>
+                <p class="point-desc">
+                  「調べたり試したりするAI」と「結果を受け取って判断するAI」をそれぞれ別のメモ用紙で動かし、情報を物理的に切り離します。
+                </p>
+              </li>
+              <li>
+                <div class="point-title">
+                  「太い作業」を「細い出口」で絞り込む
+                </div>
+                <p class="point-desc">
+                  大量の試行錯誤やプロセスを他のエージェントに切り出し、最後は細い出口を通って結果だけをぎゅっと凝縮して届けます。
+                </p>
+              </li>
+              <li>
+                <div class="point-title">
+                  常にノイズのない「すっきり頭」をキープ
+                </div>
+                <p class="point-desc">
+                  メインAIが余計な雑音（大量のエラーログ等）に惑わされないため、長時間の複雑なシステム開発でも、最後まで続けることができます。
+                </p>
+              </li>
+            </ul>
+          </div>
+          <div class="right-panel">
+            <div class="diagram-s6">
+              <div class="s6-container">
+                <!-- Sub Agent Avatar at the top -->
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 1.5cqh; flex-shrink: 0;">
+                  <div style="font-size: 1.8cqw; background: #fffde7; border: 2px solid var(--primary-color); border-radius: 50%; width: 3.5cqw; height: 3.5cqw; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">🕵️</div>
+                  <div style="font-size: 0.9cqw; font-weight: 800; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 4px; color: var(--text-black);">調査・試行のAI</div>
+                </div>
+
+                <div class="s6-input-label" style="display: flex; align-items: center; gap: 6px;">
+                  <!-- Inline SVG Document Icon instead of emoji to prevent broken image icon -->
+                  <svg viewBox="0 0 24 24" style="width: 1.2cqw; height: 1.2cqw; stroke: currentColor; stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  大量の調査・エラー修正 (10万文字)
+                </div>
+
+                <!-- Funnel Graphic Wrapper -->
+                <div class="s6-funnel-wrapper">
+                  <svg class="s6-funnel-svg" viewBox="0 0 100 100">
+                    <!-- Funnel Body Background -->
+                    <polygon
+                      points="10,10 90,10 60,60 40,60"
+                      class="s6-funnel-fill"
+                      stroke="#b0bec5"
+                      stroke-width="2"
+                    />
+                    <rect
+                      x="40"
+                      y="60"
+                      width="20"
+                      height="20"
+                      class="s6-funnel-fill"
+                      stroke="#b0bec5"
+                      stroke-width="2"
+                    />
+
+                    <!-- Funnel Outline -->
+                    <line x1="10" y1="10" x2="90" y2="10" />
+                    <line x1="10" y1="10" x2="40" y2="60" />
+                    <line x1="90" y1="10" x2="60" y2="60" />
+                    <line x1="40" y1="60" x2="40" y2="80" />
+                    <line x1="60" y1="60" x2="60" y2="80" />
+                  </svg>
+
+                  <div class="s6-funnel-particles">
+                    <div class="s6-particle">読込</div>
+                    <div class="s6-particle">検索</div>
+                    <div class="s6-particle">エラー</div>
+                    <div class="s6-particle">実行</div>
+                  </div>
+                </div>
+
+                <div class="s6-narrow-exit">👇</div>
+                <div class="s6-exit-label">✅ すっきり成果報告だけ</div>
+
+                <!-- Main Agent Avatar at the bottom -->
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 1.5cqh; flex-shrink: 0;">
+                  <div style="font-size: 1.8cqw; background: #e3f2fd; border: 2px solid var(--secondary-color); border-radius: 50%; width: 3.5cqw; height: 3.5cqw; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">🤖</div>
+                  <div style="font-size: 0.9cqw; font-weight: 800; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 4px; color: var(--text-black);">結果判断のAI (メイン)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 共通ナビゲーションUI ==================== -->
+      <div class="nav-info">
+        <div class="slide-counter" id="counter">1 / 6</div>
+      </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+      let currentSlide = 1;
+      const totalSlides = 6;
+
+      function showSlide(slideNumber) {
+        // 現在のアクティブスライドを非表示
+        document.querySelectorAll('.slide').forEach((slide) => {
+          slide.classList.remove('active');
+        });
+
+        // 新しいスライドを表示
+        document.getElementById(`slide${slideNumber}`).classList.add('active');
+
+        currentSlide = slideNumber;
+
+        // カウンターの表示更新
+        document.getElementById('counter').innerText =
+          `${currentSlide} / ${totalSlides}`;
+      }
+
+      function nextSlide() {
+        if (currentSlide < totalSlides) {
+          showSlide(currentSlide + 1);
+        }
+      }
+
+      function prevSlide() {
+        if (currentSlide > 1) {
+          showSlide(currentSlide - 1);
+        }
+      }
+
+      function firstSlide() {
+        showSlide(1);
+      }
+
+      function lastSlide() {
+        showSlide(totalSlides);
+      }
+
+      document.addEventListener('keydown', function (event) {
+        switch (event.key) {
+          case 'ArrowRight':
+          case ' ':
+            event.preventDefault();
+            nextSlide();
+            break;
+          case 'ArrowLeft':
+            event.preventDefault();
+            prevSlide();
+            break;
+          case 'Home':
+            event.preventDefault();
+            firstSlide();
+            break;
+          case 'End':
+            event.preventDefault();
+            lastSlide();
+            break;
+          case '1':
+          case '2':
+          case '3':
+          case '4':
+          case '5':
+          case '6':
+            event.preventDefault();
+            const slideNum = parseInt(event.key);
+            if (slideNum >= 1 && slideNum <= totalSlides) {
+              showSlide(slideNum);
+            }
+            break;
+        }
+      });
+
+      // 初期表示
+      showSlide(1);
+    </script>
+  </body>
+</html>

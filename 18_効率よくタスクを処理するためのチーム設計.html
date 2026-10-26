@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>23-5-4 チーム設計 of 定石 - Udemy講座スライド</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CSS Reset & Variables --- */
+        :root {
+            --primary-color: #FFD600;    /* メイン黄色 */
+            --secondary-color: #25BAE9;  /* サブ青色 */
+            --text-black: #333333;       /* メインテキスト */
+            --background-gray: #EFF3F4;  /* 背景グレー */
+            --white: #FFFFFF;            /* 白背景 */
+            --text-gray: #555555;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --card-shadow: 0 8px 30px rgba(0,0,0,0.04);
+            --transition-speed: 0.4s;
+            --success-color: #22C55E;
+            --success-bg: rgba(34, 197, 94, 0.1);
+            --danger-color: #EF4444;
+            --danger-bg: rgba(239, 68, 68, 0.1);
+            --accent-purple: #8B5CF6;
+            --accent-purple-bg: rgba(139, 92, 246, 0.1);
+            --warning-color: #F59E0B;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #111111;
+            color: var(--text-black);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- 16:9 Aspect Ratio Slide Container --- */
+        .slide-container {
+            width: 90vw;
+            height: 50.625vw; /* 9/16 * 90vw */
+            max-width: 1600px;
+            max-height: 900px;
+            position: relative;
+            background-color: var(--white);
+            box-shadow: 0 25px 70px rgba(0,0,0,0.6);
+            border-radius: 12px;
+            overflow: hidden;
+            container-type: size;
+            container-name: slide;
+        }
+
+        /* Vertical viewport adjustments */
+        @media (max-aspect-ratio: 16/9) {
+            .slide-container {
+                width: 177.78vh; /* 16/9 * 90vh */
+                height: 90vh;
+            }
+        }
+
+        /* --- Individual Slide Wrapper --- */
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition-speed) cubic-bezier(0.25, 1, 0.5, 1);
+            background-color: var(--white);
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 2;
+        }
+
+        /* Theme Styling options */
+        .slide.theme-blue {
+            background-color: var(--white);
+        }
+
+        .slide.theme-yellow {
+            background-color: var(--background-gray);
+        }
+
+        /* --- Title Area (Header 15%) --- */
+        .title-area {
+            height: 15cqh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 4cqw;
+            position: relative;
+        }
+
+        .slide.theme-yellow .title-area {
+            background-color: var(--primary-color);
+        }
+
+        .slide.theme-blue .title-area {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .title-area h2 {
+            margin: 0;
+            font-size: 2.8cqw;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 1.5cqw;
+        }
+
+        .title-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05cqw;
+            font-weight: 800;
+            background-color: rgba(255, 255, 255, 0.35);
+            color: inherit;
+            padding: 0.4cqh 1.2cqw;
+            border-radius: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .slide.theme-yellow .title-badge {
+            background-color: rgba(0, 0, 0, 0.08);
+            color: var(--text-black);
+        }
+
+        /* --- Main Content Area --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            padding: 4cqh 4cqw 6cqh 4cqw;
+            gap: 4cqw;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 3cqh;
+        }
+
+        .right-panel {
+            width: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Bullet Points */
+        .points-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 3.5cqh;
+        }
+
+        .points-list li {
+            position: relative;
+            padding-left: 2.5cqw;
+        }
+
+        .points-list li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0.7cqh;
+            width: 1.2cqw;
+            height: 1.2cqw;
+            border-radius: 50%;
+        }
+
+        .slide.theme-yellow .points-list li::before {
+            background-color: var(--secondary-color);
+        }
+
+        .slide.theme-blue .points-list li::before {
+            background-color: var(--primary-color);
+        }
+
+        .point-title {
+            font-size: 1.5cqw;
+            font-weight: 700;
+            color: #111111;
+            margin-bottom: 0.6cqh;
+        }
+
+        .point-desc {
+            font-size: 1.05cqw;
+            color: var(--text-gray);
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        /* --- Navigation Counter Floating --- */
+        .nav-info {
+            position: absolute;
+            bottom: 20px;
+            left: 5%;
+            right: 5%;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            font-size: 0.95rem;
+            color: #888;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .slide-counter {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .slide.theme-blue .slide-counter {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .slide.theme-yellow .slide-counter {
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+
+        /* ==========================================================================
+           SLIDE-SPECIFIC CUSTOM DIAGRAM STYLES
+           ========================================================================== */
+
+        /* --- Slide 1: イントロダクション（AIを増やせば早く終わるの誤解） --- */
+        .diagram-s1 {
+            width: 95%;
+            height: 95%;
+            background: rgba(255, 255, 255, 0.85);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .s1-bubble-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5cqh 1.5cqw;
+            width: 100%;
+            height: 65%;
+            margin-top: 1cqh;
+        }
+
+        .s1-ai-card {
+            background: #fff;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 1cqh 1cqw;
+            display: flex;
+            align-items: center;
+            gap: 0.8cqw;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            position: relative;
+        }
+
+        .s1-ai-card.collision {
+            border-color: var(--danger-color);
+            background: #fef2f2;
+        }
+
+        .s1-ai-card.chatty {
+            border-color: var(--warning-color);
+            background: #fffbeb;
+        }
+
+        .s1-avatar {
+            width: 3.2cqw;
+            height: 3.2cqw;
+            border-radius: 50%;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6cqw;
+            flex-shrink: 0;
+        }
+
+        .s1-ai-card.collision .s1-avatar {
+            background: var(--danger-bg);
+        }
+
+        .s1-ai-card.chatty .s1-avatar {
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .s1-chat-bubble {
+            font-size: 0.8cqw;
+            font-weight: 600;
+            color: #475569;
+            line-height: 1.3;
+        }
+
+        .s1-ai-card.collision .s1-chat-bubble {
+            color: #b91c1c;
+        }
+
+        .s1-ai-card.chatty .s1-chat-bubble {
+            color: #b45309;
+        }
+
+        .s1-status-bar {
+            width: 100%;
+            height: 25%;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            border-radius: 0 0 8px 8px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0 2cqw;
+        }
+
+        .s1-status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.8cqw;
+        }
+
+        .s1-status-icon {
+            font-size: 1.8cqw;
+        }
+
+        .s1-status-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .s1-status-label {
+            font-size: 0.75cqw;
+            color: #64748b;
+            font-weight: 700;
+        }
+
+        .s1-status-val {
+            font-size: 1.1cqw;
+            font-weight: 900;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .s1-status-val.danger {
+            color: var(--danger-color);
+        }
+
+        /* --- Slide 2: 推奨規模（3〜5名の少数精鋭） --- */
+        .diagram-s2 {
+            width: 95%;
+            height: 95%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            justify-content: space-between;
+            align-items: stretch;
+            gap: 2cqw;
+        }
+
+        .s2-panel {
+            width: 48%;
+            border-radius: 10px;
+            padding: 2cqh 1.5cqw;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .s2-panel.good {
+            background: #f0fafd;
+            border: 2px solid rgba(37, 186, 233, 0.2);
+        }
+
+        .s2-panel.bad {
+            background: #fcf8f8;
+            border: 2px solid rgba(239, 68, 68, 0.15);
+        }
+
+        .s2-header {
+            font-size: 1.25cqw;
+            font-weight: 800;
+            margin-bottom: 2cqh;
+            text-align: center;
+            width: 100%;
+            padding-bottom: 1cqh;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5cqw;
+        }
+
+        .s2-panel.good .s2-header { color: #0284c7; }
+        .s2-panel.bad .s2-header { color: #b91c1c; }
+
+        .s2-canvas {
+            flex: 1;
+            width: 100%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 3-5名の黄金チーム図 */
+        .s2-team-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.2cqw;
+            width: 100%;
+        }
+
+        .s2-member {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5cqh;
+        }
+
+        .s2-member-icon {
+            width: 3.5cqw;
+            height: 3.5cqw;
+            border-radius: 50%;
+            background: var(--white);
+            border: 2.5px solid var(--secondary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8cqw;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+
+        .s2-member.leader .s2-member-icon {
+            border-color: var(--primary-color);
+            background: #fffdf0;
+        }
+
+        .s2-member-label {
+            font-size: 0.8cqw;
+            font-weight: 800;
+            color: #475569;
+        }
+
+        .s2-link-arrow {
+            font-size: 1.5cqw;
+            color: #cbd5e1;
+        }
+
+        /* 10名以上のカオス図 */
+        .s2-chaos-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .chaos-node {
+            position: absolute;
+            width: 2.2cqw;
+            height: 2.2cqw;
+            border-radius: 50%;
+            background: #fee2e2;
+            border: 1.5px solid var(--danger-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1cqw;
+        }
+
+        .chaos-node:nth-child(1) { top: 10%; left: 20%; }
+        .chaos-node:nth-child(2) { top: 10%; left: 50%; }
+        .chaos-node:nth-child(3) { top: 15%; left: 80%; }
+        .chaos-node:nth-child(4) { top: 40%; left: 10%; }
+        .chaos-node:nth-child(5) { top: 45%; left: 45%; }
+        .chaos-node:nth-child(6) { top: 38%; left: 75%; }
+        .chaos-node:nth-child(7) { top: 75%; left: 25%; }
+        .chaos-node:nth-child(8) { top: 70%; left: 60%; }
+        .chaos-node:nth-child(9) { top: 75%; left: 85%; }
+
+        .s2-desc-badge {
+            margin-top: 1.5cqh;
+            padding: 0.5cqh 1cqw;
+            border-radius: 20px;
+            font-size: 0.85cqw;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .s2-panel.good .s2-desc-badge {
+            background-color: var(--success-bg);
+            color: #166534;
+        }
+
+        .s2-panel.bad .s2-desc-badge {
+            background-color: var(--danger-bg);
+            color: #991b1b;
+        }
+
+
+        /* --- Slide 3: Builders と Reviewer の黄金比 --- */
+        .diagram-s3 {
+            width: 95%;
+            height: 95%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2.5cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .s3-flow-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 75%;
+            width: 100%;
+            position: relative;
+        }
+
+        .s3-group-builders {
+            width: 32%;
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 1.5cqh 1cqw;
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5cqh;
+            position: relative;
+            z-index: 2;
+        }
+
+        .s3-group-title {
+            font-size: 0.9cqw;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .s3-builders-row {
+            display: flex;
+            gap: 1cqw;
+            justify-content: center;
+        }
+
+        .s3-builder-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.3cqh;
+        }
+
+        .s3-builder-avatar {
+            width: 3.2cqw;
+            height: 3.2cqw;
+            border-radius: 50%;
+            background: var(--secondary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6cqw;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .s3-builder-name {
+            font-size: 0.75cqw;
+            font-weight: 700;
+            color: #475569;
+        }
+
+        .s3-connector {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 10%;
+            position: relative;
+            z-index: 2;
+        }
+
+        .s3-arrow {
+            font-size: 2.2cqw;
+            color: var(--secondary-color);
+            font-weight: 900;
+        }
+
+        .s3-arrow-label {
+            font-size: 0.75cqw;
+            font-weight: 800;
+            color: #64748b;
+            margin-top: 0.5cqh;
+        }
+
+        .s3-reviewer-gate {
+            width: 28%;
+            border: 2px solid #8b5cf6;
+            border-radius: 8px;
+            padding: 2cqh 1.5cqw;
+            background: #faf5ff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.2cqh;
+            position: relative;
+            z-index: 2;
+        }
+
+        .s3-reviewer-avatar {
+            width: 4cqw;
+            height: 4cqw;
+            border-radius: 50%;
+            background: #8b5cf6;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2cqw;
+            box-shadow: 0 4px 10px rgba(139, 92, 246, 0.2);
+        }
+
+        .s3-gate-badge {
+            background: #8b5cf6;
+            color: white;
+            font-size: 0.75cqw;
+            font-weight: 800;
+            padding: 0.2cqh 0.8cqw;
+            border-radius: 12px;
+        }
+
+        .s3-gate-action {
+            font-size: 0.9cqw;
+            font-weight: 800;
+            color: #5b21b6;
+            text-align: center;
+        }
+
+        .s3-output {
+            width: 15%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1cqh;
+            position: relative;
+            z-index: 2;
+        }
+
+        .s3-output-icon {
+            font-size: 3cqw;
+            animation: pulse 2s infinite alternate;
+        }
+
+        .s3-output-label {
+            font-size: 0.8cqw;
+            font-weight: 800;
+            color: #166534;
+            background: var(--success-bg);
+            padding: 0.3cqh 0.8cqw;
+            border-radius: 4px;
+        }
+
+        .s3-feedback-loop {
+            position: absolute;
+            top: 4cqh;
+            left: 16%;
+            width: 40%;
+            height: 12cqh;
+            border: 2px dashed var(--danger-color);
+            border-bottom: none;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }
+
+        .s3-feedback-label {
+            position: absolute;
+            top: -1.5cqh;
+            background: #ffffff;
+            border: 1.5px solid var(--danger-color);
+            border-radius: 4px;
+            color: var(--danger-color);
+            font-size: 0.85cqw;
+            font-weight: 800;
+            padding: 0.2cqh 0.8cqw;
+            white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.08);
+            z-index: 3;
+        }
+
+        .s3-note {
+            font-size: 0.85cqw;
+            color: var(--text-gray);
+            font-weight: 600;
+            text-align: center;
+            padding-top: 1cqh;
+            border-top: 1px solid #e2e8f0;
+        }
+
+
+        /* --- Slide 4: 役割定義（3つの境界線） --- */
+        .diagram-s4 {
+            width: 95%;
+            height: 95%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 2.5cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .s4-main {
+            display: flex;
+            align-items: center;
+            height: 80%;
+            width: 100%;
+            gap: 2cqw;
+        }
+
+        .s4-ai-center {
+            width: 30%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1cqh;
+        }
+
+        .s4-ai-icon {
+            font-size: 4.5cqw;
+            background: #fffbeb;
+            border: 2.5px solid var(--primary-color);
+            width: 7cqw;
+            height: 7cqw;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(255, 214, 0, 0.15);
+        }
+
+        .s4-ai-title {
+            font-size: 1.15cqw;
+            font-weight: 800;
+            color: #1e293b;
+        }
+
+        .s4-ai-subtitle {
+            font-size: 0.75cqw;
+            color: #64748b;
+            font-weight: 700;
+            background: #f1f5f9;
+            padding: 0.2cqh 0.6cqw;
+            border-radius: 4px;
+        }
+
+        .s4-rules-list {
+            width: 70%;
+            display: flex;
+            flex-direction: column;
+            gap: 1.8cqh;
+        }
+
+        .s4-rule-card {
+            background: #f8fafc;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 1.5cqh 1.2cqw;
+            display: flex;
+            align-items: center;
+            gap: 1.2cqw;
+            position: relative;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .s4-rule-card::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            border-radius: 8px 0 0 8px;
+        }
+
+        .s4-rule-card.r1::before { background-color: var(--secondary-color); }
+        .s4-rule-card.r2::before { background-color: var(--success-color); }
+        .s4-rule-card.r3::before { background-color: var(--accent-purple); }
+
+        .s4-rule-card:hover {
+            transform: translateX(5px);
+            border-color: #94a3b8;
+        }
+
+        .s4-rule-num {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.6cqw;
+            font-weight: 900;
+            width: 2.8cqw;
+            height: 2.8cqw;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            flex-shrink: 0;
+        }
+
+        .s4-rule-card.r1 .s4-rule-num { color: var(--secondary-color); border: 2px solid var(--secondary-color); }
+        .s4-rule-card.r2 .s4-rule-num { color: var(--success-color); border: 2px solid var(--success-color); }
+        .s4-rule-card.r3 .s4-rule-num { color: var(--accent-purple); border: 2px solid var(--accent-purple); }
+
+        .s4-rule-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .s4-rule-name {
+            font-size: 1.1cqw;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 0.3cqh;
+        }
+
+        .s4-rule-desc {
+            font-size: 0.85cqw;
+            color: var(--text-gray);
+            line-height: 1.4;
+        }
+
+
+        /* --- Slide 5: まとめ（3つの定石） --- */
+        .diagram-s5 {
+            width: 95%;
+            height: 95%;
+            background: rgba(255,255,255,0.9);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .s5-gears-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            height: 70%;
+            width: 100%;
+        }
+
+        .s5-gear-box {
+            width: 28%;
+            background: white;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 2.5cqh 1.5cqw;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 1.5cqh;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            transition: transform 0.3s ease;
+        }
+
+        .s5-gear-box:hover {
+            transform: translateY(-5px);
+            border-color: var(--secondary-color);
+        }
+
+        .s5-gear-icon {
+            font-size: 3.5cqw;
+            animation: spin 10s infinite linear;
+        }
+
+        .s5-gear-box.g1 .s5-gear-icon { color: var(--secondary-color); }
+        .s5-gear-box.g2 .s5-gear-icon { color: #8b5cf6; }
+        .s5-gear-box.g3 .s5-gear-icon { color: var(--warning-color); }
+
+        .s5-gear-title {
+            font-size: 1.2cqw;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .s5-gear-desc {
+            font-size: 0.85cqw;
+            color: var(--text-gray);
+            line-height: 1.4;
+        }
+
+        .s5-footer-msg {
+            text-align: center;
+            font-size: 1.2cqw;
+            font-weight: 800;
+            color: #1e293b;
+            background: #fffbeb;
+            border: 1px solid rgba(255, 214, 0, 0.4);
+            padding: 1.2cqh 2cqw;
+            border-radius: 8px;
+            width: 100%;
+        }
+
+        /* --- Keyframes for subtle animations --- */
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.9; }
+            100% { transform: scale(1.1); opacity: 1; }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* --- SVG overlay for connection lines --- */
+        .s2-svg-overlay line {
+            stroke: #cbd5e1;
+            stroke-width: 2;
+            stroke-dasharray: 4 4;
+        }
+        .s2-panel.bad .s2-svg-overlay line {
+            stroke: #fca5a5;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        
+        <!-- Slide 1: イントロダクション（AIを増やせば早く終わるの誤解） -->
+        <div class="slide theme-yellow slide1 active" id="slide1">
+            <div class="title-area">
+                <h2><span class="title-badge">Introduction</span>「AIを増やせば早く終わる」の誤解</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">人数を増やしても早く終わらない</div>
+                            <p class="point-desc">
+                                AIを大量に起動すれば爆速で開発が進むわけではありません。人間と同様、無計画なチーム拡大は破綻を招きます。
+                            </p>
+                        </li>
+                        <li>
+                            <div class="point-title">会話ばかりでコードが書かれない状態に</div>
+                            <p class="point-desc">
+                                AI同士が「仕様調整」や「認識共有」のメッセージを無限に送り合い、実開発がストップしてしまう危険があります。
+                            </p>
+                        </li>
+                        <li>
+                            <div class="point-title">API利用料（トークン）が跳ね上がる</div>
+                            <p class="point-desc">
+                                AIの記憶容量（コンテキスト）が他人のログを読むだけで満タンになり、高額な請求書だけが残る結果になります。
+                            </p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s1">
+                        <div style="font-size: 1.1cqw; font-weight: 800; color: #b91c1c;">🤖 AIを大量投入したカオスの状態</div>
+                        <div class="s1-bubble-container">
+                            <div class="s1-ai-card collision">
+                                <div class="s1-avatar">💥</div>
+                                <div class="s1-chat-bubble">ファイル競合発生！<br>上書きされてバグった！</div>
+                            </div>
+                            <div class="s1-ai-card chatty">
+                                <div class="s1-avatar">💬</div>
+                                <div class="s1-chat-bubble">「この仕様どうする？」<br>「自分はこう思います」</div>
+                            </div>
+                            <div class="s1-ai-card chatty">
+                                <div class="s1-avatar">💬</div>
+                                <div class="s1-chat-bubble">ログが長すぎて過去の<br>指示を忘れました…</div>
+                            </div>
+                            <div class="s1-ai-card collision">
+                                <div class="s1-avatar">⚠️</div>
+                                <div class="s1-chat-bubble">同じファイルを同時に<br>編集しようとしています</div>
+                            </div>
+                        </div>
+                        <div class="s1-status-bar">
+                            <div class="s1-status-item">
+                                <div class="s1-status-icon">💸</div>
+                                <div class="s1-status-info">
+                                    <span class="s1-status-label">トークンコスト</span>
+                                    <span class="s1-status-val danger">EXPENSIVE</span>
+                                </div>
+                            </div>
+                            <div class="s1-status-item">
+                                <div class="s1-status-icon">📉</div>
+                                <div class="s1-status-info">
+                                    <span class="s1-status-label">開発進捗率</span>
+                                    <span class="s1-status-val danger">STUCK (0%)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 定石1：チームの推奨規模 -->
+        <div class="slide theme-blue slide2" id="slide2">
+            <div class="title-area">
+                <h2><span class="title-badge">Rule 1</span>チームの推奨規模は「3〜5名」</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">最も効率よく動く「少数精鋭」</div>
+                            <p class="point-desc">
+                                AIの最適な連携人数は、リーダーを含めて3〜5人。これを超えるとコミュニケーションコストが指数関数的に増大します。
+                            </p>
+                        </li>
+                        <li>
+                            <div class="point-title">コンフリクト（物理的衝突）の防止</div>
+                            <p class="point-desc">
+                                人数が多すぎると、同じファイルを同時に書き換えてコードがぐちゃぐちゃになり、開発プロセスが停止します。
+                            </p>
+                        </li>
+                        <li>
+                            <div class="point-title">1人あたり「5〜6タスク」が黄金比</div>
+                            <p class="point-desc">
+                                抱えるタスク数が少なすぎず多すぎないこの状態が、AIが最も効率的に、かつ無駄なく動く目安となります。
+                            </p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s2">
+                        <!-- 良い例: 3-5名 -->
+                        <div class="s2-panel good">
+                            <div class="s2-header">🟢 推奨：3〜5名</div>
+                            <div class="s2-canvas">
+                                <div class="s2-team-container">
+                                    <div class="s2-member leader">
+                                        <div class="s2-member-icon">👑</div>
+                                        <span class="s2-member-label">Leader</span>
+                                    </div>
+                                    <span class="s2-link-arrow">⇆</span>
+                                    <div class="s2-member">
+                                        <div class="s2-member-icon">🤖</div>
+                                        <span class="s2-member-label">AI-A</span>
+                                    </div>
+                                    <span class="s2-link-arrow">⇆</span>
+                                    <div class="s2-member">
+                                        <div class="s2-member-icon">🤖</div>
+                                        <span class="s2-member-label">AI-B</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="s2-desc-badge">調整コストが低く、並行作業がスムーズ</div>
+                        </div>
+
+                        <!-- 悪い例: 大人数 -->
+                        <div class="s2-panel bad">
+                            <div class="s2-header">❌ 非推奨：10名以上</div>
+                            <div class="s2-canvas">
+                                <div class="s2-chaos-container">
+                                    <svg class="s2-svg-overlay">
+                                        <!-- 線が交錯するイメージの表現 -->
+                                        <line x1="20%" y1="15%" x2="50%" y2="15%" />
+                                        <line x1="50%" y1="15%" x2="80%" y2="20%" />
+                                        <line x1="20%" y1="15%" x2="10%" y2="45%" />
+                                        <line x1="10%" y1="45%" x2="45%" y2="50%" />
+                                        <line x1="45%" y1="50%" x2="75%" y2="43%" />
+                                        <line x1="80%" y1="20%" x2="75%" y2="43%" />
+                                        <line x1="10%" y1="45%" x2="25%" y2="80%" />
+                                        <line x1="25%" y1="80%" x2="60%" y2="75%" />
+                                        <line x1="60%" y1="75%" x2="85%" y2="80%" />
+                                        <line x1="75%" y1="43%" x2="85%" y2="80%" />
+                                        <!-- 交差する追加の線（カオス感） -->
+                                        <line x1="50%" y1="15%" x2="25%" y2="80%" />
+                                        <line x1="45%" y1="50%" x2="85%" y2="80%" />
+                                        <line x1="20%" y1="15%" x2="75%" y2="43%" />
+                                    </svg>
+                                    <div class="chaos-node">🤖</div>
+                                    <div class="chaos-node">🤖</div>
+                                    <div class="chaos-node">🤖</div>
+                                    <div class="chaos-node">🤖</div>
+                                    <div class="chaos-node">🤖</div>
+                                    <div class="chaos-node">🤖</div>
+                                    <div class="chaos-node">🤖</div>
+                                    <div class="chaos-node">🤖</div>
+                                    <div class="chaos-node">🤖</div>
+                                </div>
+                            </div>
+                            <div class="s2-desc-badge">メッセージ爆発 ＆ ファイル衝突が発生</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 定石2：メンバー構成の黄金比 -->
+        <div class="slide theme-blue slide3" id="slide3">
+            <div class="title-area">
+                <h2><span class="title-badge">Rule 2</span>メンバー構成は「開発 3〜4 : レビュー 1」</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">全員にコードを書かせない</div>
+                            <p class="point-desc">
+                                全員でファイル編集を行うと衝突が避けられません。コードをゴリゴリ書く「Builders」に役割を集中させます。
+                            </p>
+                        </li>
+                        <li>
+                            <div class="point-title">レビュアーを1名配置</div>
+                            <p class="point-desc">
+                                専任のレビュアーとなるAIを配置し、「口は出すけど手は出さない」品質管理のポジションとします。
+                            </p>
+                        </li>
+                        <li>
+                            <div class="point-title">厳格な「品質ゲート」を確立</div>
+                            <p class="point-desc">
+                                開発者が「実装完了」と報告しても、レビュアーが「テスト/解析」して承認しない限り、タスク完了にしない仕組みが品質を劇的に高めます。
+                            </p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s3">
+                        <div style="font-size: 1.1cqw; font-weight: 800; color: #8b5cf6; text-align: center;">🛡️ 品質ゲート型の開発フロー</div>
+                        <div class="s3-flow-container">
+                            <!-- Builders -->
+                            <div class="s3-group-builders">
+                                <span class="s3-group-title">Builders (3〜4名)</span>
+                                <div class="s3-builders-row">
+                                    <div class="s3-builder-card">
+                                        <div class="s3-builder-avatar">💻</div>
+                                        <span class="s3-builder-name">AI-A</span>
+                                    </div>
+                                    <div class="s3-builder-card">
+                                        <div class="s3-builder-avatar">💻</div>
+                                        <span class="s3-builder-name">AI-B</span>
+                                    </div>
+                                    <div class="s3-builder-card">
+                                        <div class="s3-builder-avatar">💻</div>
+                                        <span class="s3-builder-name">AI-C</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="s3-connector">
+                                <span class="s3-arrow">➔</span>
+                                <span class="s3-arrow-label">提出</span>
+                            </div>
+
+                            <!-- Reviewer -->
+                            <div class="s3-reviewer-gate">
+                                <div class="s3-reviewer-avatar">🧐</div>
+                                <span class="s3-gate-badge">Reviewer</span>
+                                <div class="s3-gate-action">厳格にテスト ＆ 審査</div>
+                            </div>
+
+                            <div class="s3-connector">
+                                <span class="s3-arrow" style="color: var(--success-color);">➔</span>
+                                <span class="s3-arrow-label" style="color: var(--success-color); font-weight: 900;">承認</span>
+                            </div>
+
+                            <!-- Finished -->
+                            <div class="s3-output">
+                                <div class="s3-output-icon">📦</div>
+                                <span class="s3-output-label">高品質コード</span>
+                            </div>
+                        </div>
+                        <div class="s3-note">※レビュアーが直接コードを直すのではなく、差し戻された開発者本人が責任を持ってコードを修正するサイクルを作ります。</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 定石3：役割定義の書き方 -->
+        <div class="slide theme-blue slide4" id="slide4">
+            <div class="title-area">
+                <h2><span class="title-badge">Rule 3</span>プロンプトで定める「3つの境界線」</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">AIは「記憶喪失の新人バイト」</div>
+                            <p class="point-desc">
+                                AIは優秀ですが、プロジェクトの前提知識を持ちません。最初のプロンプトで動く範囲とルールを明確に縛る必要があります。
+                            </p>
+                        </li>
+                        <li>
+                            <div class="point-title">縄張り・完了条件・連携のルール化</div>
+                            <p class="point-desc">
+                                縄張り（担当ファイル）を明示し、終わり（完了条件）を機械的に定義し、他人を巻き込む際の連携方法を指定します。
+                            </p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s4">
+                        <div style="font-size: 1.1cqw; font-weight: 800; color: var(--secondary-color); text-align: center;">📝 プロンプトに記述すべき3つの防壁</div>
+                        <div class="s4-main">
+                            <div class="s4-ai-center">
+                                <div class="s4-ai-icon">🤖</div>
+                                <span class="s4-ai-title">新人AI</span>
+                                <span class="s4-ai-subtitle">「迷い」をゼロに！</span>
+                            </div>
+                            <div class="s4-rules-list">
+                                <div class="s4-rule-card r1">
+                                    <div class="s4-rule-num">1</div>
+                                    <div class="s4-rule-info">
+                                        <span class="s4-rule-name">担当ファイル範囲 (縄張り)</span>
+                                        <span class="s4-rule-desc">「@Frontendはsrc/components/以外編集不可」のようにフォルダ・ファイルパスを明示し、縄張り争いを防ぐ。</span>
+                                    </div>
+                                </div>
+                                <div class="s4-rule-card r2">
+                                    <div class="s4-rule-num">2</div>
+                                    <div class="s4-rule-info">
+                                        <span class="s4-rule-name">完了条件 (ゴールの定義)</span>
+                                        <span class="s4-rule-desc">「ユニットテストがすべてパスする」「npm run buildでエラーがない」など機械的かつ客観的に判定できる基準を設定。</span>
+                                    </div>
+                                </div>
+                                <div class="s4-rule-card r3">
+                                    <div class="s4-rule-num">3</div>
+                                    <div class="s4-rule-info">
+                                        <span class="s4-rule-name">他メンバーとの境界線 (連携方法)</span>
+                                        <span class="s4-rule-desc">共通ファイルを触る場合は「勝手に変更せず、必ずメールボックス経由で合意をとってから実装する」連携フローを定義。</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: まとめ -->
+        <div class="slide theme-yellow slide5" id="slide5">
+            <div class="title-area">
+                <h2><span class="title-badge">Summary</span>まとめ：チーム設計の定石</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">適切なチームサイズ</div>
+                            <p class="point-desc">
+                                リーダー含めて「3〜5名」に抑え、調整コストとトークン消費の無駄を徹底的に排除する。
+                            </p>
+                        </li>
+                        <li>
+                            <div class="point-title">役割の分離 (品質ゲート)</div>
+                            <p class="point-desc">
+                                「開発 3〜4人 : レビュアー 1人」の構成を作り、厳密な承認チェックを仕組み化する。
+                            </p>
+                        </li>
+                        <li>
+                            <div class="point-title">プロンプトによる防壁設計</div>
+                            <p class="point-desc">
+                                担当ファイル、完了条件、連携方法の3つの境界線をあらかじめ定義し、AIの暴走とコンフリクトを回避する。
+                            </p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s5">
+                        <div class="s5-gears-container">
+                            <div class="s5-gear-box g1">
+                                <div class="s5-gear-icon">⚙️</div>
+                                <span class="s5-gear-title">1. 適正人数</span>
+                                <span class="s5-gear-desc">リーダー含め<br><strong>3〜5名</strong></span>
+                            </div>
+                            <div class="s5-gear-box g2">
+                                <div class="s5-gear-icon">⚙️</div>
+                                <span class="s5-gear-title">2. 役割分担</span>
+                                <span class="s5-gear-desc">開発 3-4 : <strong>レビュアー 1</strong><br>(品質ゲート)</span>
+                            </div>
+                            <div class="s5-gear-box g3">
+                                <div class="s5-gear-icon">⚙️</div>
+                                <span class="s5-gear-title">3. 役割定義</span>
+                                <span class="s5-gear-desc"><strong>3つの境界線</strong><br>(担当・完了・連携)</span>
+                            </div>
+                        </div>
+                        <div class="s5-footer-msg">
+                            💡 この3大原則を守ることで、AIたちは暴走することなく、熟練のエンジニアチームのようにスマートに並行開発を進めてくれます！
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ==================== 共通ナビゲーションUI ==================== -->
+    <div class="nav-info">
+        <div class="slide-counter" id="counter">1 / 5</div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 5;
+
+        function showSlide(slideNumber) {
+            // 現在のアクティブスライドを非表示
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+
+            // 新しいスライドを表示
+            document.getElementById(`slide${slideNumber}`).classList.add('active');
+            
+            currentSlide = slideNumber;
+
+            // カウンターの表示更新
+            document.getElementById('counter').innerText = `${currentSlide} / ${totalSlides}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        function firstSlide() {
+            showSlide(1);
+        }
+
+        function lastSlide() {
+            showSlide(totalSlides);
+        }
+
+        document.addEventListener('keydown', function(event) {
+            switch(event.key) {
+                case 'ArrowRight':
+                case ' ':
+                    event.preventDefault();
+                    nextSlide();
+                    break;
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    prevSlide();
+                    break;
+                case 'Home':
+                    event.preventDefault();
+                    firstSlide();
+                    break;
+                case 'End':
+                    event.preventDefault();
+                    lastSlide();
+                    break;
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                    event.preventDefault();
+                    const slideNum = parseInt(event.key);
+                    if (slideNum >= 1 && slideNum <= totalSlides) {
+                        showSlide(slideNum);
+                    }
+                    break;
+            }
+        });
+
+        // 初期表示
+        showSlide(1);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>23-4-5 タスク分割の設計論 - Udemy講座スライド</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CSS Reset & Variables --- */
+        :root {
+            --primary-color: #FFD600;    /* メイン黄色 */
+            --secondary-color: #25BAE9;  /* サブ青色 */
+            --text-black: #333333;       /* メインテキスト */
+            --background-gray: #EFF3F4;  /* 背景グレー */
+            --white: #FFFFFF;            /* 白背景 */
+            --text-gray: #555555;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --card-shadow: 0 8px 30px rgba(0,0,0,0.04);
+            --transition-speed: 0.4s;
+            --success-color: #22C55E;
+            --success-bg: rgba(34, 197, 94, 0.1);
+            --danger-color: #EF4444;
+            --danger-bg: rgba(239, 68, 68, 0.1);
+            --accent-purple: #8B5CF6;
+            --accent-purple-bg: rgba(139, 92, 246, 0.1);
+            --warning-color: #F59E0B;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #111111;
+            color: var(--text-black);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- 16:9 Aspect Ratio Slide Container --- */
+        .slide-container {
+            width: 90vw;
+            height: 50.625vw; /* 9/16 * 90vw */
+            max-width: 1600px;
+            max-height: 900px;
+            position: relative;
+            background-color: var(--white);
+            box-shadow: 0 25px 70px rgba(0,0,0,0.6);
+            border-radius: 12px;
+            overflow: hidden;
+            container-type: size;
+            container-name: slide;
+        }
+
+        /* Vertical viewport adjustments */
+        @media (max-aspect-ratio: 16/9) {
+            .slide-container {
+                width: 177.78vh; /* 16/9 * 90vh */
+                height: 90vh;
+            }
+        }
+
+        /* --- Individual Slide Wrapper --- */
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition-speed) cubic-bezier(0.25, 1, 0.5, 1);
+            background-color: var(--white);
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 2;
+        }
+
+        /* Theme Styling options */
+        .slide.theme-blue {
+            background-color: var(--white);
+        }
+
+        .slide.theme-yellow {
+            background-color: var(--background-gray);
+        }
+
+        /* --- Title Area (Header 15%) --- */
+        .title-area {
+            height: 15cqh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 4cqw;
+            position: relative;
+        }
+
+        .slide.theme-yellow .title-area {
+            background-color: var(--primary-color);
+        }
+
+        .slide.theme-blue .title-area {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .title-area h2 {
+            margin: 0;
+            font-size: 2.8cqw;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 1.5cqw;
+        }
+
+        .title-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05cqw;
+            font-weight: 800;
+            background-color: rgba(255, 255, 255, 0.35);
+            color: inherit;
+            padding: 0.4cqh 1.2cqw;
+            border-radius: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .slide.theme-yellow .title-badge {
+            background-color: rgba(0, 0, 0, 0.08);
+            color: var(--text-black);
+        }
+
+        /* --- Main Content Area --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            padding: 4cqh 4cqw 6cqh 4cqw;
+            gap: 4cqw;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 3cqh;
+        }
+
+        .right-panel {
+            width: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Bullet Points */
+        .points-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 3.5cqh;
+        }
+
+        .points-list li {
+            position: relative;
+            padding-left: 2.5cqw;
+        }
+
+        .points-list li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0.7cqh;
+            width: 1.2cqw;
+            height: 1.2cqw;
+            border-radius: 50%;
+        }
+
+        .slide.theme-yellow .points-list li::before {
+            background-color: var(--secondary-color);
+        }
+
+        .slide.theme-blue .points-list li::before {
+            background-color: var(--primary-color);
+        }
+
+        .point-title {
+            font-size: 1.5cqw;
+            font-weight: 700;
+            color: #111111;
+            margin-bottom: 0.6cqh;
+        }
+
+        .point-desc {
+            font-size: 1.05cqw;
+            color: var(--text-gray);
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        /* --- Navigation Counter Floating --- */
+        .nav-info {
+            position: absolute;
+            bottom: 20px;
+            left: 5%;
+            right: 5%;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            font-size: 0.95rem;
+            color: #888;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .slide-counter {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .slide.theme-blue .slide-counter {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .slide.theme-yellow .slide-counter {
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+
+        /* ==========================================================================
+           SLIDE-SPECIFIC CUSTOM DIAGRAM STYLES
+           ========================================================================== */
+
+        /* --- Slide 1: イントロダクション --- */
+        .diagram-s1 {
+            width: 95%;
+            height: 95%;
+            background: rgba(255,255,255,0.85);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 4cqh 3cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .s1-card {
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 2cqh 2cqw;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 1.5cqw;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        }
+
+        .s1-card.s1-worktree {
+            border-color: var(--secondary-color);
+            background: #f0fafd;
+        }
+
+        .s1-card.s1-design {
+            border-color: var(--accent-purple);
+            background: #fdfaff;
+        }
+
+        .s1-icon {
+            font-size: 2.5cqw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .s1-info {
+            flex: 1;
+        }
+
+        .s1-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.8cqw;
+            font-weight: 800;
+            padding: 0.2cqh 0.8cqw;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 0.6cqh;
+        }
+
+        .s1-card.s1-worktree .s1-badge {
+            background: rgba(37, 186, 233, 0.15);
+            color: #0284c7;
+        }
+
+        .s1-card.s1-design .s1-badge {
+            background: rgba(139, 92, 246, 0.15);
+            color: #6b21a8;
+        }
+
+        .s1-title {
+            font-size: 1.25cqw;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 0.4cqh;
+        }
+
+        .s1-desc {
+            font-size: 0.9cqw;
+            color: var(--text-gray);
+            line-height: 1.4;
+        }
+
+        .s1-divider {
+            font-size: 1.5cqw;
+            font-weight: 900;
+            color: #cbd5e1;
+            margin: 1cqh 0;
+            display: flex;
+            align-items: center;
+            gap: 1cqw;
+        }
+        .s1-divider::before, .s1-divider::after {
+            content: "";
+            height: 2px;
+            width: 6cqw;
+            background-color: #cbd5e1;
+        }
+
+
+        /* --- Slide 2: 原則1（ファイル所有権） --- */
+        .diagram-s2 {
+            width: 95%;
+            height: 95%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            justify-content: space-between;
+            align-items: stretch;
+            gap: 1.5cqw;
+        }
+
+        .s2-panel {
+            width: 48%;
+            border-radius: 8px;
+            padding: 2cqh 1.5cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .s2-panel.bad {
+            background: #fff5f5;
+            border: 1.5px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .s2-panel.good {
+            background: #f0fdf4;
+            border: 1.5px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .s2-header {
+            font-size: 1.1cqw;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.5cqw;
+            margin-bottom: 2cqh;
+        }
+
+        .s2-panel.bad .s2-header {
+            color: var(--danger-color);
+        }
+
+        .s2-panel.good .s2-header {
+            color: var(--success-color);
+        }
+
+        .s2-content {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5cqh;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .s2-agent-box {
+            padding: 0.8cqh 1cqw;
+            border-radius: 6px;
+            font-size: 0.95cqw;
+            font-weight: 700;
+            width: 80%;
+            text-align: center;
+        }
+
+        .s2-panel.bad .s2-agent-box {
+            background: #ffffff;
+            border: 1.5px solid #cbd5e1;
+            color: #475569;
+        }
+
+        .s2-panel.good .s2-agent-box.a1 {
+            background: var(--success-bg);
+            border: 1.5px solid var(--success-color);
+            color: #166534;
+        }
+
+        .s2-panel.good .s2-agent-box.a2 {
+            background: var(--accent-purple-bg);
+            border: 1.5px solid var(--accent-purple);
+            color: #6b21a8;
+        }
+
+        .s2-arrow {
+            font-size: 1.1cqw;
+            color: #94a3b8;
+            line-height: 1;
+        }
+
+        .s2-file-box {
+            padding: 1cqh 1cqw;
+            border-radius: 6px;
+            font-size: 0.9cqw;
+            font-weight: 700;
+            width: 85%;
+            text-align: center;
+            font-family: 'Outfit', monospace;
+        }
+
+        .s2-panel.bad .s2-file-box {
+            background: var(--danger-bg);
+            border: 2px dashed var(--danger-color);
+            color: #991b1b;
+        }
+
+        .s2-panel.good .s2-file-box {
+            background: #ffffff;
+            border: 1.5px solid #cbd5e1;
+            color: #334155;
+        }
+
+        .s2-panel.good .s2-row {
+            display: flex;
+            width: 100%;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1cqw;
+        }
+
+        .s2-panel.good .s2-col-item {
+            width: 48%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1cqh;
+        }
+
+
+        /* --- Slide 3: 原則2（依存関係の直列化） --- */
+        .diagram-s3 {
+            width: 95%;
+            height: 95%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .s3-row {
+            width: 100%;
+            border-radius: 8px;
+            padding: 2cqh 2cqw;
+            position: relative;
+        }
+
+        .s3-row.bad {
+            background: #fff5f5;
+            border: 1.5px solid rgba(239, 68, 68, 0.15);
+            height: 46%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .s3-row.good {
+            background: #f0fdf4;
+            border: 1.5px solid rgba(34, 197, 94, 0.15);
+            height: 46%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .s3-status {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.8cqw;
+            font-weight: 800;
+            padding: 0.2cqh 0.6cqw;
+            border-radius: 4px;
+            position: absolute;
+            top: 1.5cqh;
+            left: 1.5cqw;
+        }
+
+        .s3-row.bad .s3-status {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .s3-row.good .s3-status {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .s3-flow {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1.5cqw;
+            margin-top: 2cqh;
+            flex: 1;
+        }
+
+        .s3-box {
+            padding: 1cqh 1.2cqw;
+            border-radius: 6px;
+            font-size: 0.95cqw;
+            font-weight: 700;
+            background: white;
+            border: 1.5px solid #cbd5e1;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            text-align: center;
+            min-width: 13cqw;
+        }
+
+        .s3-row.bad .s3-box {
+            border-color: #fca5a5;
+        }
+
+        .s3-row.good .s3-box {
+            border-color: #86efac;
+        }
+
+        .s3-arrow-flow {
+            font-size: 1.2cqw;
+            font-weight: 800;
+            color: #94a3b8;
+        }
+
+        .s3-row.bad .s3-arrow-flow {
+            color: var(--danger-color);
+        }
+
+        .s3-row.good .s3-arrow-flow {
+            color: var(--success-color);
+        }
+
+        .s3-footer-msg {
+            font-size: 0.85cqw;
+            font-weight: 700;
+            text-align: center;
+            margin-top: 0.5cqh;
+        }
+
+        .s3-row.bad .s3-footer-msg {
+            color: #b91c1c;
+        }
+
+        .s3-row.good .s3-footer-msg {
+            color: #15803d;
+        }
+
+
+        /* --- Slide 4: 原則3（短命なWorktree） --- */
+        .diagram-s4 {
+            width: 95%;
+            height: 95%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .s4-cycle {
+            position: relative;
+            width: 100%;
+            height: 70%;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .s4-step {
+            background: #ffffff;
+            border: 2.5px solid var(--secondary-color);
+            border-radius: 50%;
+            width: 8.5cqw;
+            height: 8.5cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 6px 16px rgba(37, 186, 233, 0.1);
+            z-index: 2;
+        }
+
+        .s4-num {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1cqw;
+            font-weight: 900;
+            color: var(--secondary-color);
+            line-height: 1;
+            margin-bottom: 0.3cqh;
+        }
+
+        .s4-text {
+            font-size: 1cqw;
+            font-weight: 800;
+            color: #1e293b;
+        }
+
+        .s4-flow-arrow {
+            font-size: 2cqw;
+            font-weight: 900;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            animation: pulse-arrow 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse-arrow {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.15); opacity: 1; color: var(--secondary-color); }
+        }
+
+        .s4-bottom-box {
+            background: #f8fafc;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 1.5cqh 2cqw;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1cqw;
+        }
+
+        .s4-cycle-title {
+            font-size: 1.05cqw;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .s4-cycle-desc {
+            font-size: 0.9cqw;
+            color: var(--text-gray);
+        }
+
+
+        /* --- Slide 5: まとめ --- */
+        .diagram-s5 {
+            width: 95%;
+            height: 95%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: stretch;
+            gap: 2cqh;
+        }
+
+        .s5-checklist {
+            background: #fafafa;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 2cqh 2cqw;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+
+        .s5-check-item {
+            display: flex;
+            align-items: center;
+            gap: 1.2cqw;
+        }
+
+        .s5-check-icon {
+            font-size: 1.6cqw;
+            color: var(--success-color);
+            display: flex;
+            align-items: center;
+        }
+
+        .s5-check-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .s5-check-title {
+            font-size: 1.15cqw;
+            font-weight: 800;
+            color: #1e293b;
+        }
+
+        .s5-check-desc {
+            font-size: 0.85cqw;
+            color: var(--text-gray);
+            margin-top: 0.2cqh;
+        }
+
+        .s5-next-box {
+            background: var(--accent-purple-bg);
+            border: 1.5px solid rgba(139, 92, 246, 0.3);
+            border-radius: 8px;
+            padding: 1.5cqh 2cqw;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .s5-next-left {
+            display: flex;
+            align-items: center;
+            gap: 1cqw;
+        }
+
+        .s5-next-badge {
+            background: var(--accent-purple);
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.8cqw;
+            font-weight: 800;
+            padding: 0.3cqh 0.8cqw;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .s5-next-title {
+            font-size: 1.05cqw;
+            font-weight: 800;
+            color: #4c1d95;
+        }
+
+        .s5-next-arrow {
+            font-size: 1.2cqw;
+            font-weight: 800;
+            color: var(--accent-purple);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="slide-container">
+        
+        <!-- ==================== Slide 1 ==================== -->
+        <div class="slide theme-yellow active" id="slide1">
+            <div class="title-area">
+                <h2><span class="title-badge">Theory</span>コンフリクトを起こさないタスク分割設計論</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">Worktreeが防ぐ競合の本質</div>
+                            <p class="point-desc">Git Worktreeは、あくまで「ローカルでの開発作業中にファイルシステム上で競合してしまうこと」を防ぐ技術です。</p>
+                        </li>
+                        <li>
+                            <div class="point-title">最終マージ時のコンフリクト</div>
+                            <p class="point-desc">メインブランチへ並列作業を統合する（マージする）際の、Gitコンフリクト自体を自動で解決してくれるわけではありません。</p>
+                        </li>
+                        <li>
+                            <div class="point-title">事前設計こそが最大のマージ対策</div>
+                            <p class="point-desc">AI並列開発 of 恩恵を最大化するには、AIにタスクを渡す前に人間が「コンフリクトを未然に防ぐタスク設計」をする必要があります。</p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s1">
+                        <div class="s1-card s1-worktree">
+                            <div class="s1-icon">📂</div>
+                            <div class="s1-info">
+                                <span class="s1-badge">Git Worktree</span>
+                                <div class="s1-title">作業中の物理的な競合を防ぐ</div>
+                                <div class="s1-desc">ローカルフォルダの分離で別タスクを快適に同時実行</div>
+                            </div>
+                        </div>
+                        <div class="s1-divider">AND</div>
+                        <div class="s1-card s1-design">
+                            <div class="s1-icon">🧠</div>
+                            <div class="s1-info">
+                                <span class="s1-badge">人間によるタスク設計</span>
+                                <div class="s1-title">統合時の論理的な競合を防ぐ</div>
+                                <div class="s1-desc">事前のタスク分割設計でマージ時のコンフリクトを回避</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== Slide 2 ==================== -->
+        <div class="slide theme-blue" id="slide2">
+            <div class="title-area">
+                <h2><span class="title-badge">Principle 1</span>原則①：ファイル所有権で分割する</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">機能の概念だけでの分割は危険</div>
+                            <p class="point-desc">「ログイン機能」と「パスワード変更」のように機能単位だけで切り分けると、共通ファイルへの同時書き込みが発生しやすくなります。</p>
+                        </li>
+                        <li>
+                            <div class="point-title">共通ファイルの編集競合</div>
+                            <p class="point-desc">共通UIコンポーネント、ルーター、設定ファイルなどを複数のAIが同時に編集すると、激しいコンフリクトが発生します。</p>
+                        </li>
+                        <li>
+                            <div class="point-title">ファイル所有権に基づくアサイン</div>
+                            <p class="point-desc">「どのファイルを読み書きするか」を基準にタスクを分割し、各AIが触る範囲が重複しないよう設計します。</p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s2">
+                        <div class="s2-panel bad">
+                            <div class="s2-header">🚨 機能で切り分け (競合)</div>
+                            <div class="s2-content">
+                                <div class="s2-agent-box">AI A: ログイン機能</div>
+                                <div class="s2-agent-box">AI B: パスワード変更</div>
+                                <div class="s2-arrow">▼</div>
+                                <div class="s2-file-box">共通 auth_config.json を同時編集</div>
+                            </div>
+                        </div>
+                        <div class="s2-panel good">
+                            <div class="s2-header">✨ ファイル所有権で分割 (安全)</div>
+                            <div class="s2-content">
+                                <div class="s2-row">
+                                    <div class="s2-col-item">
+                                        <div class="s2-agent-box a1">AI A</div>
+                                        <div class="s2-arrow">▼</div>
+                                        <div class="s2-file-box">login_form.js</div>
+                                    </div>
+                                    <div class="s2-col-item">
+                                        <div class="s2-agent-box a2">AI B</div>
+                                        <div class="s2-arrow">▼</div>
+                                        <div class="s2-file-box">pw_logic.js</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== Slide 3 ==================== -->
+        <div class="slide theme-blue" id="slide3">
+            <div class="title-area">
+                <h2><span class="title-badge">Principle 2</span>原則②：依存し合う機能は並列にしない</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">相互依存する開発タスクの禁止</div>
+                            <p class="point-desc">互いに密接に依存し合っている開発タスクは、絶対に同時に起動してはいけません。</p>
+                        </li>
+                        <li>
+                            <div class="point-title">スキーマ定義とAPI実装の例</div>
+                            <p class="point-desc">「DBテーブル定義の追加」と「そのテーブルを利用するAPI実装」を並列化すると、未定義のテーブルへのテストが走りクラッシュします。</p>
+                        </li>
+                        <li>
+                            <div class="point-title">直列化による安全な順序制御</div>
+                            <p class="point-desc">先行するタスク（スキーマ定義）を完全に完了させ、メインに統合してから、後続のタスク（API実装）を開始します。</p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s3">
+                        <div class="s3-row bad">
+                            <span class="s3-status">✕ 並列実行</span>
+                            <div class="s3-flow">
+                                <div class="s3-box">スキーマ定義変更</div>
+                                <span class="s3-arrow-flow">⚡</span>
+                                <div class="s3-box">APIエンドポイント実装</div>
+                            </div>
+                            <div class="s3-footer-msg">スキーマが確定していないためテストがクラッシュ！</div>
+                        </div>
+                        <div class="s3-row good">
+                            <span class="s3-status">◯ 直列実行</span>
+                            <div class="s3-flow">
+                                <div class="s3-box">1. スキーマ変更</div>
+                                <span class="s3-arrow-flow">➔</span>
+                                <div class="s3-box">2. API実装開始</div>
+                            </div>
+                            <div class="s3-footer-msg">先行する定義が確定しているため、安全に開発可能</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== Slide 4 ==================== -->
+        <div class="slide theme-blue" id="slide4">
+            <div class="title-area">
+                <h2><span class="title-badge">Principle 3</span>原則③：Worktreeは短命にする</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">ライフサイクルを短く回す</div>
+                            <p class="point-desc">Worktreeは、「作る ➔ 作業する ➔ マージする ➔ 削除する」という一連のライフサイクルを、できるだけ短期間で回します。</p>
+                        </li>
+                        <li>
+                            <div class="point-title">本流からの乖離によるリスク</div>
+                            <p class="point-desc">放置された古いWorktreeはメインの本流から乖離し、いざマージしようとした時に巨大なコンフリクトを引き起こします。</p>
+                        </li>
+                        <li>
+                            <div class="point-title">AIの「古い前提」でのミスを防ぐ</div>
+                            <p class="point-desc">AIエージェントに古いコード前提のまま作業を続けさせると、不必要なエラーや論理的な設計ミスが発生しやすくなります。</p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s4">
+                        <div class="s4-cycle">
+                            <div class="s4-step">
+                                <span class="s4-num">1</span>
+                                <span class="s4-text">作成</span>
+                            </div>
+                            <span class="s4-flow-arrow">➔</span>
+                            <div class="s4-step">
+                                <span class="s4-num">2</span>
+                                <span class="s4-text">作業</span>
+                            </div>
+                            <span class="s4-flow-arrow">➔</span>
+                            <div class="s4-step">
+                                <span class="s4-num">3</span>
+                                <span class="s4-text">マージ</span>
+                            </div>
+                            <span class="s4-flow-arrow">➔</span>
+                            <div class="s4-step">
+                                <span class="s4-num">4</span>
+                                <span class="s4-text">削除</span>
+                            </div>
+                        </div>
+                        <div class="s4-bottom-box">
+                            <span class="s4-cycle-title">🔄 短サイクル開発のメリット</span>
+                            <span class="s4-cycle-desc">本流との乖離を最小限にし、AIの間違いとマージの手戻りを防止</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== Slide 5 ==================== -->
+        <div class="slide theme-yellow" id="slide5">
+            <div class="title-area">
+                <h2><span class="title-badge">Summary</span>まとめ：並列開発の3つの設計原則</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">ファイル所有権によるタスク分割</div>
+                            <p class="point-desc">機能だけでなく、触るファイルが重複しないようにアサインを切り分ける。</p>
+                        </li>
+                        <li>
+                            <div class="point-title">依存する機能の直列化</div>
+                            <p class="point-desc">スキーマの変更など、他が依存する先行タスクはメインに統合してから次へ進む。</p>
+                        </li>
+                        <li>
+                            <div class="point-title">短命なWorktreeの徹底</div>
+                            <p class="point-desc">「作成から削除まで」を素早く完了させ、古い情報での手戻りを防ぐ。</p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s5">
+                        <div class="s5-checklist">
+                            <div class="s5-check-item">
+                                <div class="s5-check-icon">✓</div>
+                                <div class="s5-check-text">
+                                    <div class="s5-check-title">ファイル重複の回避</div>
+                                    <div class="s5-check-desc">作業ファイルの所有権を完全に分離する</div>
+                                </div>
+                            </div>
+                            <div class="s5-check-item">
+                                <div class="s5-check-icon">✓</div>
+                                <div class="s5-check-text">
+                                    <div class="s5-check-title">タスク順序の整理</div>
+                                    <div class="s5-check-desc">密結合なタスクは必ず順番に実行する</div>
+                                </div>
+                            </div>
+                            <div class="s5-check-item">
+                                <div class="s5-check-icon">✓</div>
+                                <div class="s5-check-text">
+                                    <div class="s5-check-title">素早いマージ</div>
+                                    <div class="s5-check-desc">Worktreeを長生きさせず本流へ早く戻す</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="s5-next-box">
+                            <div class="s5-next-left">
+                                <span class="s5-next-badge">Next Video</span>
+                                <span class="s5-next-title">Claude Codeの新機能「エージェントチーム」</span>
+                            </div>
+                            <span class="s5-next-arrow">➔</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 共通ナビゲーションUI ==================== -->
+        <div class="nav-info">
+            <div class="slide-counter" id="counter">1 / 5</div>
+        </div>
+
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 5;
+
+        function showSlide(slideNumber) {
+            // 現在のアクティブスライドを非表示
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+
+            // 新しいスライドを表示
+            document.getElementById(`slide${slideNumber}`).classList.add('active');
+            
+            currentSlide = slideNumber;
+            
+            // カウンターの表示更新
+            document.getElementById('counter').innerText = `${currentSlide} / ${totalSlides}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        function firstSlide() {
+            showSlide(1);
+        }
+
+        function lastSlide() {
+            showSlide(totalSlides);
+        }
+
+        document.addEventListener('keydown', function(event) {
+            switch(event.key) {
+                case 'ArrowRight':
+                case ' ':
+                    event.preventDefault();
+                    nextSlide();
+                    break;
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    prevSlide();
+                    break;
+                case 'Home':
+                    event.preventDefault();
+                    firstSlide();
+                    break;
+                case 'End':
+                    event.preventDefault();
+                    lastSlide();
+                    break;
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                    event.preventDefault();
+                    const slideNum = parseInt(event.key);
+                    if (slideNum >= 1 && slideNum <= totalSlides) {
+                        showSlide(slideNum);
+                    }
+                    break;
+            }
+        });
+
+        // 初期表示
+        showSlide(1);
+    </script>
+</body>
+</html>

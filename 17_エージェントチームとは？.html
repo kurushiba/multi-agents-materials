@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>23-5-1 エージェントチームとは - Udemy講座スライド</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CSS Reset & Variables --- */
+        :root {
+            --primary-color: #FFD600;    /* メイン黄色 */
+            --secondary-color: #25BAE9;  /* サブ青色 */
+            --text-black: #333333;       /* メインテキスト */
+            --background-gray: #EFF3F4;  /* 背景グレー */
+            --white: #FFFFFF;            /* 白背景 */
+            --text-gray: #555555;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --card-shadow: 0 8px 30px rgba(0,0,0,0.04);
+            --transition-speed: 0.4s;
+            --success-color: #22C55E;
+            --success-bg: rgba(34, 197, 94, 0.1);
+            --danger-color: #EF4444;
+            --danger-bg: rgba(239, 68, 68, 0.1);
+            --accent-purple: #8B5CF6;
+            --accent-purple-bg: rgba(139, 92, 246, 0.1);
+            --warning-color: #F59E0B;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #111111;
+            color: var(--text-black);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- 16:9 Aspect Ratio Slide Container --- */
+        .slide-container {
+            width: 90vw;
+            height: 50.625vw; /* 9/16 * 90vw */
+            max-width: 1600px;
+            max-height: 900px;
+            position: relative;
+            background-color: var(--white);
+            box-shadow: 0 25px 70px rgba(0,0,0,0.6);
+            border-radius: 12px;
+            overflow: hidden;
+            container-type: size;
+            container-name: slide;
+        }
+
+        /* Vertical viewport adjustments */
+        @media (max-aspect-ratio: 16/9) {
+            .slide-container {
+                width: 177.78vh; /* 16/9 * 90vh */
+                height: 90vh;
+            }
+        }
+
+        /* --- Individual Slide Wrapper --- */
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition-speed) cubic-bezier(0.25, 1, 0.5, 1);
+            background-color: var(--white);
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 2;
+        }
+
+        /* Theme Styling options */
+        .slide.theme-blue {
+            background-color: var(--white);
+        }
+
+        .slide.theme-yellow {
+            background-color: var(--background-gray);
+        }
+
+        /* --- Title Area (Header 15%) --- */
+        .title-area {
+            height: 15cqh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 4cqw;
+            position: relative;
+        }
+
+        .slide.theme-yellow .title-area {
+            background-color: var(--primary-color);
+        }
+
+        .slide.theme-blue .title-area {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .title-area h2 {
+            margin: 0;
+            font-size: 2.8cqw;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 1.5cqw;
+        }
+
+        .title-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05cqw;
+            font-weight: 800;
+            background-color: rgba(255, 255, 255, 0.35);
+            color: inherit;
+            padding: 0.4cqh 1.2cqw;
+            border-radius: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .slide.theme-yellow .title-badge {
+            background-color: rgba(0, 0, 0, 0.08);
+            color: var(--text-black);
+        }
+
+        /* --- Main Content Area --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            padding: 4cqh 4cqw 6cqh 4cqw;
+            gap: 4cqw;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 3cqh;
+        }
+
+        .right-panel {
+            width: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Bullet Points */
+        .points-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 3.5cqh;
+        }
+
+        .points-list li {
+            position: relative;
+            padding-left: 2.5cqw;
+        }
+
+        .points-list li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0.7cqh;
+            width: 1.2cqw;
+            height: 1.2cqw;
+            border-radius: 50%;
+        }
+
+        .slide.theme-yellow .points-list li::before {
+            background-color: var(--secondary-color);
+        }
+
+        .slide.theme-blue .points-list li::before {
+            background-color: var(--primary-color);
+        }
+
+        .point-title {
+            font-size: 1.5cqw;
+            font-weight: 700;
+            color: #111111;
+            margin-bottom: 0.6cqh;
+        }
+
+        .point-desc {
+            font-size: 1.05cqw;
+            color: var(--text-gray);
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        /* --- Navigation Counter Floating --- */
+        .nav-info {
+            position: absolute;
+            bottom: 20px;
+            left: 5%;
+            right: 5%;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            font-size: 0.95rem;
+            color: #888;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .slide-counter {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .slide.theme-blue .slide-counter {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .slide.theme-yellow .slide-counter {
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+
+        /* ==========================================================================
+           SLIDE-SPECIFIC CUSTOM DIAGRAM STYLES
+           ========================================================================== */
+
+        /* --- Slide 1: エージェントチームとは何か？ (概要) --- */
+        .diagram-s1 {
+            width: 95%;
+            height: 95%;
+            background: rgba(255,255,255,0.85);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2.5cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .s1-room {
+            border: 2px dashed var(--secondary-color);
+            background: #f0fafd;
+            border-radius: 10px;
+            width: 100%;
+            height: 80%;
+            padding: 2cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            position: relative;
+        }
+
+        .s1-room-label {
+            position: absolute;
+            top: -1.2cqh;
+            left: 2cqw;
+            background: var(--secondary-color);
+            color: white;
+            font-size: 0.85cqw;
+            font-weight: 800;
+            padding: 0.2cqh 0.8cqw;
+            border-radius: 4px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .s1-chat-row {
+            display: flex;
+            align-items: center;
+            gap: 1.5cqw;
+            width: 100%;
+        }
+
+        .s1-chat-row.reverse {
+            flex-direction: row-reverse;
+        }
+
+        .s1-avatar {
+            width: 4.5cqw;
+            height: 4.5cqw;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.8cqw;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+            flex-shrink: 0;
+            border: 2px solid white;
+        }
+
+        .s1-avatar.leader {
+            background: var(--primary-color);
+            color: var(--text-black);
+            border-color: #eab308;
+        }
+
+        .s1-avatar.member1 {
+            background: var(--secondary-color);
+            color: white;
+            border-color: #0284c7;
+        }
+
+        .s1-avatar.member2 {
+            background: var(--accent-purple);
+            color: white;
+            border-color: #6b21a8;
+        }
+
+        .s1-avatar-icon {
+            font-size: 1.8cqw;
+            margin-bottom: 0.2cqh;
+        }
+
+        .s1-bubble {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.2cqh 1.5cqw;
+            font-size: 0.9cqw;
+            font-weight: 500;
+            color: #334155;
+            position: relative;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+            flex: 1;
+        }
+
+        .s1-bubble::before {
+            content: "";
+            position: absolute;
+            top: 2cqh;
+            width: 0;
+            height: 0;
+            border: 8px solid transparent;
+        }
+
+        .s1-chat-row:not(.reverse) .s1-bubble::before {
+            left: -16px;
+            border-right-color: white;
+        }
+
+        .s1-chat-row.reverse .s1-bubble::before {
+            right: -16px;
+            border-left-color: white;
+        }
+
+        .s1-note {
+            font-size: 0.85cqw;
+            font-weight: 700;
+            color: var(--text-gray);
+            text-align: center;
+        }
+
+
+        /* --- Slide 2: コミュニケーションの決定的な違い (対比) --- */
+        .diagram-s2 {
+            width: 95%;
+            height: 95%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            justify-content: space-between;
+            align-items: stretch;
+            gap: 2cqw;
+        }
+
+        .s2-panel {
+            width: 48%;
+            border-radius: 8px;
+            padding: 2cqh 1.5cqw;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .s2-panel.subagents {
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+        }
+
+        .s2-panel.team {
+            background: #f0fafd;
+            border: 1.5px solid rgba(37, 186, 233, 0.2);
+        }
+
+        .s2-header {
+            font-size: 1.2cqw;
+            font-weight: 800;
+            margin-bottom: 3cqh;
+            text-align: center;
+            width: 100%;
+            padding-bottom: 1cqh;
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+        }
+
+        .s2-panel.subagents .s2-header { color: #475569; }
+        .s2-panel.team .s2-header { color: #0284c7; }
+
+        .s2-canvas {
+            flex: 1;
+            width: 100%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* サブエージェント構成図 */
+        .s2-node {
+            position: absolute;
+            width: 4.5cqw;
+            height: 4.5cqw;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #cbd5e1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.75cqw;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+
+        .s2-node.parent {
+            top: 1cqh;
+            border-color: var(--secondary-color);
+            background: #f0fafd;
+        }
+
+        .s2-node.child1 {
+            bottom: 2cqh;
+            left: 2cqw;
+        }
+
+        .s2-node.child2 {
+            bottom: 2cqh;
+            right: 2cqw;
+        }
+
+        /* 矢印SVG用コンテナ */
+        .s2-svg-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .s2-node.team-leader {
+            top: 1cqh;
+            border-color: var(--primary-color);
+            background: #fffdf0;
+        }
+
+        .sNode.s2-node.team-member1 {
+            bottom: 2cqh;
+            left: 2cqw;
+            border-color: var(--accent-purple);
+        }
+
+        .sNode.s2-node.team-member2 {
+            bottom: 2cqh;
+            right: 2cqw;
+            border-color: var(--secondary-color);
+        }
+
+        .s2-caption {
+            font-size: 0.85cqw;
+            font-weight: 700;
+            color: var(--text-gray);
+            margin-top: 2cqh;
+            text-align: center;
+        }
+
+
+        /* --- Slide 3: 4つの構成要素 (構造) --- */
+        .diagram-s3 {
+            width: 95%;
+            height: 95%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .s3-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 2cqh 2cqw;
+            flex: 1;
+            margin-bottom: 2cqh;
+        }
+
+        .s3-card {
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.5cqh 1.5cqw;
+            display: flex;
+            align-items: flex-start;
+            gap: 1cqw;
+        }
+
+        .s3-card.highlight-yellow {
+            border-color: rgba(255, 214, 0, 0.4);
+            background: #fffdf0;
+        }
+
+        .s3-card.highlight-blue {
+            border-color: rgba(37, 186, 233, 0.4);
+            background: #f0fafd;
+        }
+
+        .s3-card.highlight-purple {
+            border-color: rgba(139, 92, 246, 0.4);
+            background: #fdfaff;
+        }
+
+        .s3-card-icon {
+            font-size: 2.2cqw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5cqh;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            flex-shrink: 0;
+        }
+
+        .s3-card-body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .s3-card-title {
+            font-size: 1.15cqw;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 0.5cqh;
+            display: flex;
+            align-items: center;
+            gap: 0.5cqw;
+        }
+
+        .s3-card-title span {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.8cqw;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        .s3-card-desc {
+            font-size: 0.85cqw;
+            color: var(--text-gray);
+            line-height: 1.4;
+        }
+
+
+        /* --- Slide 4: 2つのアプローチを徹底比較 (テーブル) --- */
+        .diagram-s4 {
+            width: 95%;
+            height: 95%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .s4-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .s4-table th, .s4-table td {
+            padding: 1.8cqh 1.5cqw;
+            font-size: 0.95cqw;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .s4-table th {
+            font-weight: 800;
+            font-size: 1.05cqw;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+
+        .s4-table th:first-child {
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+            width: 25%;
+        }
+
+        .s4-table th:nth-child(2) {
+            width: 37.5%;
+        }
+
+        .s4-table th:last-child {
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+            width: 37.5%;
+            background-color: #f0fafd;
+            color: #0369a1;
+        }
+
+        .s4-table td {
+            font-weight: 500;
+            color: #334155;
+        }
+
+        .s4-table td:first-child {
+            font-weight: 800;
+            color: #475569;
+            background-color: #fafafa;
+        }
+
+        .s4-table td:last-child {
+            background-color: rgba(37, 186, 233, 0.03);
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .s4-badge {
+            padding: 0.3cqh 0.6cqw;
+            border-radius: 4px;
+            font-size: 0.8cqw;
+            font-weight: 800;
+            display: inline-block;
+        }
+
+        .s4-badge.cheap {
+            background-color: var(--success-bg);
+            color: #15803d;
+        }
+
+        .s4-badge.expensive {
+            background-color: var(--danger-bg);
+            color: #b91c1c;
+        }
+
+
+        /* --- Slide 5: エージェントチームの使い所 (使い分け) --- */
+        .diagram-s5 {
+            width: 95%;
+            height: 95%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .s5-title {
+            font-size: 1.15cqw;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 2cqh;
+            display: flex;
+            align-items: center;
+            gap: 0.5cqw;
+        }
+
+        .s5-cards-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5cqh;
+            flex: 1;
+        }
+
+        .s5-card {
+            border: 1.5px solid #e2e8f0;
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1.5cqh 1.5cqw;
+            display: flex;
+            align-items: center;
+            gap: 1.5cqw;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .s5-card:hover {
+            border-color: var(--secondary-color);
+            background: #f0fafd;
+        }
+
+        .s5-card-num {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5cqw;
+            font-weight: 900;
+            color: var(--secondary-color);
+            width: 3cqw;
+            height: 3cqw;
+            background: white;
+            border: 2px solid rgba(37, 186, 233, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .s5-card-content {
+            flex: 1;
+        }
+
+        .s5-card-header {
+            font-size: 1.1cqw;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 0.4cqh;
+            display: flex;
+            align-items: center;
+            gap: 0.6cqw;
+        }
+
+        .s5-card-desc {
+            font-size: 0.85cqw;
+            color: var(--text-gray);
+            line-height: 1.4;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        
+        <!-- Slide 1: 概要 -->
+        <div class="slide theme-yellow slide1 active" id="slide1">
+            <div class="title-area">
+                <h2><span class="title-badge">Overview</span>エージェントチームとは何か？</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">複数のAIによる「チーム開発」</div>
+                            <p class="point-desc">
+                                複数のAIエージェントが、あたかも現実のエンジニアチームのように「同じ部屋に集まって、相互に会話しながら」開発を進める新機能です。
+                            </p>
+                        </li>
+                        <li>
+                            <div class="point-title">Opus 4.6に合わせた最新機能</div>
+                            <p class="point-desc">
+                                2026年2月にリリースされた新モデルに合わせて導入された、自律的な並行開発を加速させるための先進的な仕組み（実験的機能）です。
+                            </p>
+                        </li>
+                        <li>
+                            <div class="point-title">従来の「1人作業」の限界を突破</div>
+                            <p class="point-desc">
+                                1つのセッションでの待ち時間、記憶領域の汚染（コンテキスト汚染）、視点の偏りといった構造的な限界を、役割分担と協調で解決します。
+                            </p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s1">
+                        <div class="s1-room">
+                            <span class="s1-room-label">Virtual Team Room</span>
+                            
+                            <div class="s1-chat-row">
+                                <div class="s1-avatar leader">
+                                    <div class="s1-avatar-icon">👑</div>
+                                    Leader
+                                </div>
+                                <div class="s1-bubble">
+                                    「新機能の実装タスクを切り分けたよ。各自担当を進めてね！」
+                                </div>
+                            </div>
+                            
+                            <div class="s1-chat-row reverse">
+                                <div class="s1-avatar member1">
+                                    <div class="s1-avatar-icon">💻</div>
+                                    Front
+                                </div>
+                                <div class="s1-bubble">
+                                    「了解です。バックエンドのAPI仕様をすり合わせたいのでチャットしましょう！」
+                                </div>
+                            </div>
+                            
+                            <div class="s1-chat-row">
+                                <div class="s1-avatar member2">
+                                    <div class="s1-avatar-icon">⚙️</div>
+                                    Back
+                                </div>
+                                <div class="s1-bubble">
+                                    「OK、メールボックスで直接やり取りして仕様を決めましょう」
+                                </div>
+                            </div>
+                        </div>
+                        <div class="s1-note">リーダーを介さずに、AI同士が「直接」相談しながら動く</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 対比 -->
+        <div class="slide theme-blue slide2" id="slide2">
+            <div class="title-area">
+                <h2><span class="title-badge">Concept</span>コミュニケーションの決定的な違い</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">サブエージェント：縦のやり取りのみ</div>
+                            <p class="point-desc">
+                                呼び出し元の親AIと、呼び出された子AIが「1対1」で縦に会話するだけ。子AI同士は互いに会話できず、独立して動いていました。
+                            </p>
+                        </li>
+                        <li>
+                            <div class="point-title">エージェントチーム：横の直接対話</div>
+                            <p class="point-desc">
+                                メンバー同士が直接「議論・相談・情報共有」を行えます。リーダーを介さずに横同士でコミュニケーションを取れるのが最大の特徴です。
+                            </p>
+                        </li>
+                        <li>
+                            <div class="point-title">合意形成を伴う複雑な開発に対応</div>
+                            <p class="point-desc">
+                                相手の発見を踏まえて自分の担当コードを書き換えたり、API仕様を自律的に調整したりといった、人間らしい連携プレーが可能になります。
+                            </p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s2">
+                        <!-- サブエージェント -->
+                        <div class="s2-panel subagents">
+                            <div class="s2-header">サブエージェント (縦の階層)</div>
+                            <div class="s2-canvas">
+                                <svg class="s2-svg-overlay">
+                                    <!-- 縦の双方向矢印 -->
+                                    <defs>
+                                        <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                            <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+                                        </marker>
+                                    </defs>
+                                    <line x1="50%" y1="20%" x2="25%" y2="70%" stroke="#94a3b8" stroke-width="3" marker-end="url(#arrow)" marker-start="url(#arrow)" />
+                                    <line x1="50%" y1="20%" x2="75%" y2="70%" stroke="#94a3b8" stroke-width="3" marker-end="url(#arrow)" marker-start="url(#arrow)" />
+                                    <!-- 横の遮断点線 -->
+                                    <line x1="35%" y1="80%" x2="65%" y2="80%" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,4" />
+                                </svg>
+                                <div class="s2-node parent">👤 親AI</div>
+                                <div class="s2-node child1">🤖 子A</div>
+                                <div class="s2-node child2">🤖 子B</div>
+                                <div style="position:absolute; bottom:25%; color:#ef4444; font-size:1.8cqw; font-weight:900;">✕</div>
+                            </div>
+                            <div class="s2-caption">エージェント同士の横の会話は不可</div>
+                        </div>
+                        
+                        <!-- エージェントチーム -->
+                        <div class="s2-panel team">
+                            <div class="s2-header">エージェントチーム (横のフラット)</div>
+                            <div class="s2-canvas">
+                                <svg class="s2-svg-overlay">
+                                    <defs>
+                                        <marker id="arrow-blue" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                            <path d="M 0 0 L 10 5 L 0 10 z" fill="#25bae9"/>
+                                        </marker>
+                                    </defs>
+                                    <!-- 三角形の相互接続 -->
+                                    <line x1="50%" y1="20%" x2="25%" y2="70%" stroke="#25bae9" stroke-width="3" marker-end="url(#arrow-blue)" marker-start="url(#arrow-blue)" />
+                                    <line x1="50%" y1="20%" x2="75%" y2="70%" stroke="#25bae9" stroke-width="3" marker-end="url(#arrow-blue)" marker-start="url(#arrow-blue)" />
+                                    <line x1="25%" y1="80%" x2="75%" y2="80%" stroke="#25bae9" stroke-width="3" marker-end="url(#arrow-blue)" marker-start="url(#arrow-blue)" />
+                                </svg>
+                                <div class="s2-node team-leader">👑 Leader</div>
+                                <div class="s2-node team-member1">🤖 AI-A</div>
+                                <div class="s2-node team-member2">🤖 AI-B</div>
+                                <div style="position:absolute; bottom:26%; color:#22c55e; font-size:1.5cqw; font-weight:900;">✔</div>
+                            </div>
+                            <div class="s2-caption" style="color: #0369a1;">メンバー間で直接議論・相談ができる</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 4つの構成要素 -->
+        <div class="slide theme-yellow slide3" id="slide3">
+            <div class="title-area">
+                <h2><span class="title-badge">Architecture</span>エージェントチームを支える4つの要素</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">自律的に稼働するための仕組み</div>
+                            <p class="point-desc">
+                                エージェントチームは、明確に役割分担されたAIと、それらを繋ぐ共通の管理ツール群の4要素が密に連携して機能します。
+                            </p>
+                        </li>
+                        <li>
+                            <div class="point-title">現場要員のチームメイトと司令塔のリーダー</div>
+                            <p class="point-desc">
+                                マネージャー役の「リーダー」と、それぞれ100万トークンの巨大な独立コンテキストを持つ現場エンジニアの「チームメイト」です。
+                            </p>
+                        </li>
+                        <li>
+                            <div class="point-title">情報の共有場所（タスクリストとメールボックス）</div>
+                            <p class="point-desc">
+                                タスクの重複を防ぐカンバン型の「共有リスト」と、AI同士がリアルタイムにチャットする「メールボックス」が連携の要です。
+                            </p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s3">
+                        <div class="s3-grid">
+                            
+                            <!-- リーダー -->
+                            <div class="s3-card highlight-yellow">
+                                <div class="s3-card-icon">👑</div>
+                                <div class="s3-card-body">
+                                    <div class="s3-card-title">① リーダー <span>Leader</span></div>
+                                    <div class="s3-card-desc">全体の司令塔。タスクの分解、メンバーへの割り当て、成果の最終取りまとめを行うマネジメント役。</div>
+                                </div>
+                            </div>
+                            
+                            <!-- チームメイト -->
+                            <div class="s3-card highlight-blue">
+                                <div class="s3-card-icon">🤖</div>
+                                <div class="s3-card-body">
+                                    <div class="s3-card-title">② チームメイト <span>Teammates</span></div>
+                                    <div class="s3-card-desc">現場の開発員。各々が独立した100万トークンの記憶領域を持ち、担当タスクを並行で進める。</div>
+                                </div>
+                            </div>
+                            
+                            <!-- 共有タスクリスト -->
+                            <div class="s3-card highlight-purple">
+                                <div class="s3-card-icon">📋</div>
+                                <div class="s3-card-body">
+                                    <div class="s3-card-title">③ 共有タスクリスト <span>Shared List</span></div>
+                                    <div class="s3-card-desc">全員が見られるカンバン。自分の作業終了後、未着手タスクを「自分で取得（クレーム）」して二重作業を防ぐ。</div>
+                                </div>
+                            </div>
+                            
+                            <!-- メールボックス -->
+                            <div class="s3-card highlight-blue">
+                                <div class="s3-card-icon">✉</div>
+                                <div class="s3-card-body">
+                                    <div class="s3-card-title">④ メールボックス <span>Mailbox</span></div>
+                                    <div class="s3-card-desc">AI同士のSlack（チャット）。リーダーを介さずに、メンバー同士で直接かつリアルタイムに相談メッセージを送る。</div>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 比較テーブル -->
+        <div class="slide theme-blue slide4" id="slide4">
+            <div class="title-area">
+                <h2><span class="title-badge">Comparison</span>サブエージェント vs エージェントチーム</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">決定的な4つの違い</div>
+                            <p class="point-desc">
+                                単にエージェントが増えただけでなく、通信・調整・コスト・人間の介入度において性質が全く異なります。
+                            </p>
+                        </li>
+                        <li>
+                            <div class="point-title">トークンコストのトレードオフ</div>
+                            <p class="point-desc">
+                                要約のみをやり取りする安価なサブエージェントに対し、エージェントチームは対話型かつ大容量コンテキストのため高コストになります。
+                            </p>
+                        </li>
+                        <li>
+                            <div class="point-title">開発中の人間による軌道修正</div>
+                            <p class="point-desc">
+                                エージェントチームでは、個々のメンバーの画面に入り込み、チャットで直接指示を出して途中で軌道修正することが可能です。
+                            </p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s4">
+                        <table class="s4-table">
+                            <thead>
+                                <tr>
+                                    <th>比較項目</th>
+                                    <th>サブエージェント</th>
+                                    <th>エージェントチーム</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>通信のしかた</strong></td>
+                                    <td>縦のみ（上司と部下）</td>
+                                    <td>横も可能（直接会話）</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>進行の調整</strong></td>
+                                    <td>メイン（親）が1つずつ指示</td>
+                                    <td>共有リストを用いた自己調整</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>APIコスト</strong></td>
+                                    <td><span class="s4-badge cheap">低コスト (要約のみ)</span></td>
+                                    <td><span class="s4-badge expensive">高コスト (コンテキスト巨大)</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>人間の直接介入</strong></td>
+                                    <td>不可（裏側で自動実行）</td>
+                                    <td>可能（個別画面に入って助言）</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 使い所 -->
+        <div class="slide theme-yellow slide5" id="slide5" style="background-color: #f7fafc;">
+            <div class="title-area" style="background-color: var(--primary-color);">
+                <h2><span class="title-badge" style="background-color: rgba(0,0,0,0.08);">Use Cases</span>エージェントチームの具体的な使い所</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">タスクの複雑さで使い分ける</div>
+                            <p class="point-desc">
+                                他とのすり合わせが不要な単純作業はサブエージェント。複数領域の調整・合意が必要なタスクにはエージェントチームを使います。
+                            </p>
+                        </li>
+                        <li>
+                            <div class="point-title">対話力と自律性を引き出す</div>
+                            <p class="point-desc">
+                                異なる役割を与えたAI同士を競わせたり、リアルタイムに仕様を同期させながらコードを書かせることで、劇的な効果を発揮します。
+                            </p>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s5">
+                        <div class="s5-title">💡 活躍する3つの代表的ユースケース</div>
+                        <div class="s5-cards-container">
+                            
+                            <!-- 議論 -->
+                            <div class="s5-card">
+                                <div class="s5-card-num">1</div>
+                                <div class="s5-card-content">
+                                    <div class="s5-card-header">💬 仮説の議論（原因不明のバグ調査）</div>
+                                    <div class="s5-card-desc">「DB」「ネットワーク」「キャッシュ」など別々の仮説をAI達に検証させ、互いに調査結果をぶつけ合わせて真因を特定する。</div>
+                                </div>
+                            </div>
+                            
+                            <!-- レビュー -->
+                            <div class="s5-card">
+                                <div class="s5-card-num">2</div>
+                                <div class="s5-card-content">
+                                    <div class="s5-card-header">🔍 相互レビュー（多角的な視点）</div>
+                                    <div class="s5-card-desc">「セキュリティ」「パフォーマンス」「テスト」といった異なる観点の専門AIを同時に走らせ、抜け漏れのないコードレビューを行う。</div>
+                                </div>
+                            </div>
+                            
+                            <!-- 並列作業 -->
+                            <div class="s5-card">
+                                <div class="s5-card-num">3</div>
+                                <div class="s5-card-content">
+                                    <div class="s5-card-header">⚡ 並列開発（広範囲な機能実装）</div>
+                                    <div class="s5-card-desc">「フロントエンド」「バックエンド」「テスト」を別々のAIが担当し、型定義やAPI仕様をリアルタイムで共有しながら同時に書き進める。</div>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== 共通ナビゲーションUI ==================== -->
+        <div class="nav-info">
+            <div class="slide-counter" id="counter">1 / 5</div>
+        </div>
+
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 5;
+
+        function showSlide(slideNumber) {
+            // 現在のアクティブスライドを非表示
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+
+            // 新しいスライドを表示
+            document.getElementById(`slide${slideNumber}`).classList.add('active');
+            
+            currentSlide = slideNumber;
+
+            // カウンターの表示更新
+            document.getElementById('counter').innerText = `${currentSlide} / ${totalSlides}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        function firstSlide() {
+            showSlide(1);
+        }
+
+        function lastSlide() {
+            showSlide(totalSlides);
+        }
+
+        document.addEventListener('keydown', function(event) {
+            switch(event.key) {
+                case 'ArrowRight':
+                case ' ':
+                    event.preventDefault();
+                    nextSlide();
+                    break;
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    prevSlide();
+                    break;
+                case 'Home':
+                    event.preventDefault();
+                    firstSlide();
+                    break;
+                case 'End':
+                    event.preventDefault();
+                    lastSlide();
+                    break;
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                    event.preventDefault();
+                    const slideNum = parseInt(event.key);
+                    if (slideNum >= 1 && slideNum <= totalSlides) {
+                        showSlide(slideNum);
+                    }
+                    break;
+            }
+        });
+
+        // 初期表示
+        showSlide(1);
+    </script>
+</body>
+</html>

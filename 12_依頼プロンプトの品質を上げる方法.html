@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>23-3-2 依頼プロンプトの品質を上げる方法 - Udemy講座スライド</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CSS Reset & Variables --- */
+        :root {
+            --primary-color: #FFD600;    /* メイン黄色 */
+            --secondary-color: #25BAE9;  /* サブ青色 */
+            --text-black: #333333;       /* メインテキスト */
+            --background-gray: #EFF3F4;  /* 背景グレー */
+            --white: #FFFFFF;            /* 白背景 */
+            --text-gray: #555555;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --card-shadow: 0 8px 30px rgba(0,0,0,0.04);
+            --transition-speed: 0.4s;
+            --success-color: #22C55E;
+            --danger-color: #EF4444;
+            --accent-purple: #8B5CF6;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #111111;
+            color: var(--text-black);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- 16:9 Aspect Ratio Slide Container --- */
+        .slide-container {
+            width: 90vw;
+            height: 50.625vw; /* 9/16 * 90vw */
+            max-width: 1600px;
+            max-height: 900px;
+            position: relative;
+            background-color: var(--white);
+            box-shadow: 0 25px 70px rgba(0,0,0,0.6);
+            border-radius: 12px;
+            overflow: hidden;
+            container-type: size;
+            container-name: slide;
+        }
+
+        /* Vertical viewport adjustments */
+        @media (max-aspect-ratio: 16/9) {
+            .slide-container {
+                width: 177.78vh; /* 16/9 * 90vh */
+                height: 90vh;
+            }
+        }
+
+        /* --- Individual Slide Wrapper --- */
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition-speed) cubic-bezier(0.25, 1, 0.5, 1);
+            background-color: var(--white);
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 2;
+        }
+
+        /* Theme Styling options */
+        .slide.theme-blue {
+            background-color: var(--white);
+        }
+
+        .slide.theme-yellow {
+            background-color: var(--background-gray);
+        }
+
+        /* --- Title Area (Header 15%) --- */
+        .title-area {
+            height: 15cqh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 4cqw;
+            position: relative;
+        }
+
+        .slide.theme-yellow .title-area {
+            background-color: var(--primary-color);
+        }
+
+        .slide.theme-blue .title-area {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .title-area h2 {
+            margin: 0;
+            font-size: 2.8cqw;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 1.5cqw;
+        }
+
+        .title-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05cqw;
+            font-weight: 800;
+            background-color: rgba(255, 255, 255, 0.35);
+            color: inherit;
+            padding: 0.4cqh 1.2cqw;
+            border-radius: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .slide.theme-yellow .title-badge {
+            background-color: rgba(0, 0, 0, 0.08);
+            color: var(--text-black);
+        }
+
+        /* --- Main Content Area --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            padding: 4cqh 4cqw 6cqh 4cqw;
+            gap: 4cqw;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 3cqh;
+        }
+
+        .right-panel {
+            width: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Bullet Points */
+        .points-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 3cqh;
+        }
+
+        .points-list li {
+            position: relative;
+            padding-left: 2.5cqw;
+        }
+
+        .points-list li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0.7cqh;
+            width: 1.2cqw;
+            height: 1.2cqw;
+            border-radius: 50%;
+        }
+
+        .slide.theme-yellow .points-list li::before {
+            background-color: var(--secondary-color);
+        }
+
+        .slide.theme-blue .points-list li::before {
+            background-color: var(--primary-color);
+        }
+
+        .point-title {
+            font-size: 1.45cqw;
+            font-weight: 700;
+            color: #111111;
+            margin-bottom: 0.6cqh;
+        }
+
+        .point-desc {
+            font-size: 1.05cqw;
+            color: var(--text-gray);
+            line-height: 1.55;
+            margin: 0;
+        }
+
+        /* --- Navigation Counter Floating (Standard Capsule Style) --- */
+        .nav-info {
+            position: absolute;
+            bottom: 20px;
+            left: 5%;
+            right: 5%;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            font-size: 0.95rem;
+            color: #888;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .slide-counter {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .slide.theme-blue .slide-counter {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .slide.theme-yellow .slide-counter {
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        /* ==========================================================================
+           SLIDE-SPECIFIC CUSTOM DIAGRAM STYLES
+           ========================================================================== */
+
+        /* --- Slide 1: 3 Levers Concept --- */
+        .diagram-s1 {
+            width: 95%;
+            height: 95%;
+            background: rgba(255,255,255,0.85);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+        .s1-levers-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            gap: 1.5cqh;
+        }
+        .s1-lever-box {
+            display: flex;
+            align-items: center;
+            background: #ffffff;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 1.2cqh 1.5cqw;
+            gap: 1cqw;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        }
+        .s1-lever-box.l1 { border-left: 5px solid var(--secondary-color); }
+        .s1-lever-box.l2 { border-left: 5px solid var(--accent-purple); }
+        .s1-lever-box.l3 { border-left: 5px solid var(--primary-color); }
+
+        .s1-lever-num {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.2cqw;
+            font-weight: 900;
+            color: #94a3b8;
+        }
+        .s1-lever-text {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+        .s1-lever-name {
+            font-size: 0.95cqw;
+            font-weight: 800;
+            color: #1e293b;
+        }
+        .s1-lever-desc {
+            font-size: 0.75cqw;
+            color: var(--text-gray);
+        }
+        .s1-arrow-down {
+            font-size: 1.2cqw;
+            color: var(--secondary-color);
+            margin: 0.5cqh 0;
+            font-weight: bold;
+        }
+        .s1-target-box {
+            background: #f0fafd;
+            border: 2px solid var(--secondary-color);
+            border-radius: 8px;
+            padding: 1.5cqh 2cqw;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(37,186,233,0.1);
+        }
+        .s1-target-title {
+            font-size: 1.1cqw;
+            font-weight: 800;
+            color: #0369a1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5cqw;
+        }
+        .s1-target-desc {
+            font-size: 0.8cqw;
+            color: var(--text-gray);
+            margin-top: 0.2cqh;
+        }
+
+        /* --- Slide 2: Description Blur vs Clear --- */
+        .diagram-s2 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            height: 90%;
+            gap: 2cqw;
+        }
+        .s2-compare-card {
+            width: 48%;
+            height: 100%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            text-align: center;
+        }
+        .s2-compare-card.bad {
+            border-top: 6px solid var(--danger-color);
+        }
+        .s2-compare-card.good {
+            border-top: 6px solid var(--success-color);
+        }
+        .s2-card-header {
+            font-size: 1.2cqw;
+            font-weight: 800;
+            color: #1e293b;
+        }
+        .s2-status-badge {
+            font-size: 0.9cqw;
+            font-weight: 800;
+            padding: 0.4cqh 1cqw;
+            border-radius: 6px;
+            margin: 1.2cqh 0;
+        }
+        .s2-compare-card.bad .s2-status-badge {
+            background: #fee2e2;
+            color: var(--danger-color);
+        }
+        .s2-compare-card.good .s2-status-badge {
+            background: #dcfce7;
+            color: var(--success-color);
+        }
+        .s2-details {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2cqh;
+            text-align: left;
+        }
+        .s2-detail-item {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 1cqh 1cqw;
+            font-size: 0.85cqw;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4cqh;
+        }
+        .s2-item-title {
+            font-weight: 700;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            gap: 0.4cqw;
+        }
+        .s2-item-desc {
+            color: var(--text-gray);
+            font-size: 0.75cqw;
+            padding-left: 1.2cqw;
+        }
+
+        /* --- Slide 3: Autostart Strategy & Trigger Word --- */
+        .diagram-s3 {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 95%;
+            gap: 2cqh;
+            justify-content: space-between;
+        }
+        .s3-row-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 1.5cqw;
+            height: 58%;
+        }
+        .s3-card {
+            width: 48%;
+            background: white;
+            border: 1.5px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2cqh 1.2cqw;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .s3-card.auto { border-left: 5px solid var(--success-color); }
+        .s3-card.manual { border-left: 5px solid var(--accent-purple); }
+        .s3-card-title {
+            font-size: 1cqw;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 0.5cqh;
+        }
+        .s3-card-desc {
+            font-size: 0.75cqw;
+            color: var(--text-gray);
+            line-height: 1.4;
+        }
+        .s3-tag {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.7cqw;
+            font-weight: 800;
+            padding: 0.2cqh 0.6cqw;
+            border-radius: 4px;
+            align-self: flex-start;
+            margin-top: 1cqh;
+        }
+        .s3-card.auto .s3-tag { background: #dcfce7; color: var(--success-color); }
+        .s3-card.manual .s3-tag { background: #f3e8ff; color: var(--accent-purple); }
+
+        .s3-row-bottom {
+            background: #fafbfc;
+            border: 1.5px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 1.5cqh 1.5cqw;
+            height: 38%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .s3-bot-side {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3cqh;
+        }
+        .s3-bot-title {
+            font-size: 0.9cqw;
+            font-weight: 800;
+            color: #1e293b;
+        }
+        .s3-bot-desc {
+            font-size: 0.75cqw;
+            color: var(--text-gray);
+        }
+        .s3-match-flow {
+            display: flex;
+            align-items: center;
+            gap: 0.6cqw;
+            background: white;
+            padding: 0.8cqh 1cqw;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .s3-flow-text {
+            font-size: 0.8cqw;
+            font-weight: 700;
+            color: var(--secondary-color);
+        }
+
+        /* --- Slide 4: CLAUDE.md Rules Diagram --- */
+        .diagram-s4 {
+            width: 95%;
+            height: 95%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 2.5cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .s4-header {
+            font-size: 1.1cqw;
+            font-weight: 800;
+            color: #1e293b;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.8cqh;
+            display: flex;
+            align-items: center;
+            gap: 0.5cqw;
+        }
+        .s4-rules {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5cqh;
+            margin-top: 1.5cqh;
+            flex: 1;
+            justify-content: space-around;
+        }
+        .s4-rule-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.2cqh 1.2cqw;
+            display: flex;
+            align-items: flex-start;
+            gap: 1cqw;
+        }
+        .s4-rule-icon {
+            font-size: 1.4cqw;
+            background: #ffffff;
+            padding: 0.5cqh 0.6cqw;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .s4-rule-content {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+        .s4-rule-title {
+            font-size: 0.9cqw;
+            font-weight: 800;
+            color: #334155;
+        }
+        .s4-rule-desc {
+            font-size: 0.75cqw;
+            color: var(--text-gray);
+            margin-top: 0.2cqh;
+            line-height: 1.4;
+        }
+
+        /* --- Slide 5: Vague vs Specific Prompt Comparison --- */
+        .s5-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 2.5cqh 5cqw 4.5cqh 5cqw;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+        .s5-cards-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            height: 72%;
+            gap: 2.5cqw;
+        }
+        .s5-example-card {
+            width: 48%;
+            height: 100%;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 2.5cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--card-shadow);
+        }
+        .s5-example-card.bad {
+            border-top: 5px solid var(--danger-color);
+            background: #fffbfb;
+        }
+        .s5-example-card.good {
+            border-top: 5px solid var(--success-color);
+            background: #f0fdf4;
+        }
+        .s5-card-title {
+            font-size: 1.2cqw;
+            font-weight: 800;
+            color: #1e293b;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+            padding-bottom: 0.8cqh;
+            margin-bottom: 1.5cqh;
+            display: flex;
+            align-items: center;
+            gap: 0.5cqw;
+        }
+        .s5-bubble {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.2cqh 1.2cqw;
+            font-size: 0.85cqw;
+            line-height: 1.5;
+            color: var(--text-black);
+            font-family: monospace;
+            flex: 1;
+            overflow-y: auto;
+        }
+        .s5-example-card.bad .s5-bubble {
+            border-left: 4px solid var(--danger-color);
+        }
+        .s5-example-card.good .s5-bubble {
+            border-left: 4px solid var(--success-color);
+        }
+        .s5-footer-note {
+            background: rgba(37, 186, 233, 0.08);
+            border: 1px solid rgba(37, 186, 233, 0.2);
+            border-radius: 8px;
+            padding: 1cqh 2cqw;
+            display: flex;
+            align-items: center;
+            gap: 1cqw;
+            width: 100%;
+        }
+        .s5-note-icon {
+            font-size: 1.4cqw;
+        }
+        .s5-note-text {
+            font-size: 0.95cqw;
+            color: #1e293b;
+            line-height: 1.45;
+        }
+
+        /* --- Slide 6: Summary Checklist --- */
+        .diagram-s6 {
+            width: 95%;
+            height: 90%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2.5cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .s6-header {
+            font-size: 1.15cqw;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.5cqw;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 1cqh;
+            color: #1e293b;
+        }
+        .s6-items {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2cqh;
+        }
+        .s6-item {
+            display: flex;
+            align-items: center;
+            gap: 1cqw;
+            background: #f8fafc;
+            padding: 1.2cqh 1.2cqw;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            border-left: 5px solid var(--success-color);
+        }
+        .s6-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.8cqw;
+            font-weight: 800;
+            padding: 0.2cqh 0.6cqw;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        .s6-badge.blue {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+        .s6-badge.purple {
+            background: #f3e8ff;
+            color: #6b21a8;
+        }
+        .s6-badge.yellow {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+        .s6-item-text {
+            font-size: 0.9cqw;
+            font-weight: 600;
+            color: var(--text-black);
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="slide-container">
+
+        <!-- ==================== SLIDE 1: OVERVIEW ==================== -->
+        <div class="slide slide1 active theme-yellow" id="slide1">
+            <div class="title-area">
+                <h2><span class="title-badge">OVERVIEW</span>依頼プロンプトの品質を上げる3つのアプローチ</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">可変である「目的」の制御</div>
+                            <div class="point-desc">サブエージェント呼び出しのつど、メインAIが自動で組み立てて手渡す可変のパラメータが「目的」です。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">直接編集できないという制約</div>
+                            <div class="point-desc">メインAIの自律生成であるため、人間が直接プロンプトを書き込んで中身をコントロールすることはできません。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">認知プロセスへの間接的介入</div>
+                            <div class="point-desc">メインのAIの意思決定メカニズム（定義・環境・初期指示）に働きかけることで、生成されるプロンプトの質を向上させます。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s1">
+                        <div class="s1-levers-container">
+                            <div class="s1-lever-box l1">
+                                <span class="s1-lever-num">01</span>
+                                <div class="s1-lever-text">
+                                    <span class="s1-lever-name">description 定義</span>
+                                    <span class="s1-lever-desc">役割の境界とトリガーを設定する</span>
+                                </div>
+                            </div>
+                            <div class="s1-lever-box l2">
+                                <span class="s1-lever-num">02</span>
+                                <div class="s1-lever-text">
+                                    <span class="s1-lever-name">CLAUDE.md 設定</span>
+                                    <span class="s1-lever-desc">起動タイミングと書式制限を義務付ける</span>
+                                </div>
+                            </div>
+                            <div class="s1-lever-box l3">
+                                <span class="s1-lever-num">03</span>
+                                <div class="s1-lever-text">
+                                    <span class="s1-lever-name">人間からの初期指示</span>
+                                    <span class="s1-lever-desc">目的の材料となるパラメータを具体化する</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="s1-arrow-down">⬇️</div>
+                        <div class="s1-target-box">
+                            <div class="s1-target-title">🎯 高品質な「目的」の自動生成</div>
+                            <div class="s1-target-desc">ブレをなくし、サブエージェントに一発でタスクを完遂させる</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 2: LEVER 1 - DESCRIPTION ==================== -->
+        <div class="slide slide2 theme-blue" id="slide2">
+            <div class="title-area">
+                <h2><span class="title-badge">LEVER 01</span>レバー①: description によるブレの防止</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">メインAIの唯一の手がかり</div>
+                            <div class="point-desc">サブエージェント定義ファイルの description は、メインAIが「何をする専門家か」を判断するほぼ唯一のソースです。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">具体的であるほど目的がブレない</div>
+                            <div class="point-desc">アクションやアウトプットが明確に書いてあれば、メインAIは守備範囲からはみ出さない、正確な目的を生成します。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">曖昧さがもたらす失敗</div>
+                            <div class="point-desc">記述が曖昧だと、無関係な仕事を押し付けたり、本来任せるべき場面で呼び出されなかったりするエラーが起きます。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s2">
+                        <div class="s2-compare-card bad">
+                            <div class="s2-card-header">❌ 曖昧な定義</div>
+                            <span class="s2-status-badge">目的のブレ・不安定</span>
+                            <div class="s2-details">
+                                <div class="s2-detail-item">
+                                    <span class="s2-item-title">🤔 曖昧な役割</span>
+                                    <span class="s2-item-desc">何でもこなせるように見え、多すぎるタスクを押し付けてしまう</span>
+                                </div>
+                                <div class="s2-detail-item">
+                                    <span class="s2-item-title">⚠️ 誤った呼び出し</span>
+                                    <span class="s2-item-desc">不適切な状況で呼び出され、予算とトークンを無駄遣いする</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="s2-compare-card good">
+                            <div class="s2-card-header">✅ 具体的な定義</div>
+                            <span class="s2-status-badge">専門特化・安定稼働</span>
+                            <div class="s2-details">
+                                <div class="s2-detail-item">
+                                    <span class="s2-item-title">🎯 アクションと成果の明確化</span>
+                                    <span class="s2-item-desc">やること、成果物が明確なため、正確にタスクを生成できる</span>
+                                </div>
+                                <div class="s2-detail-item">
+                                    <span class="s2-item-title">🛡️ 範囲の限定</span>
+                                    <span class="s2-item-desc">想定外の仕事をシャットアウトし、確実に機能する</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 3: LEVER 1 - APPLICATION ==================== -->
+        <div class="slide slide3 theme-blue" id="slide3">
+            <div class="title-area">
+                <h2><span class="title-badge">LEVER 01</span>description 応用：積極性とトリガーワード</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">積極起動のコントロール</div>
+                            <div class="point-desc">「指示なしで自動起動する」積極性は有用ですが、どんなサブエージェントにも一律で付与してはいけません。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">ロールの性質で使い分ける</div>
+                            <div class="point-desc">コード変更監視などの安全検査は「積極起動」を設定。高コストなリサーチやデバッグは「手動起動のみ」とします。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">トリガーワードを先回りして仕込む</div>
+                            <div class="point-desc">人間の口癖（例：「PRレビュー」）を description に含めることで、メインAIが必要な場面を認識しやすくします。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s3">
+                        <div class="s3-row-top">
+                            <div class="s3-card auto">
+                                <div class="s3-card-title">🟢 積極起動 (自動化向き)</div>
+                                <div class="s3-card-desc">コードレビューや型検査など、変更を監視して即時フィードバックが必要なロール。</div>
+                                <span class="s3-tag">AUTO START</span>
+                            </div>
+                            <div class="s3-card manual">
+                                <div class="s3-card-title">🟡 手動起動 (コスト保護向き)</div>
+                                <div class="s3-card-desc">広範囲なリサーチやコマンドデバッグなど、APIコストや時間がかかるロール。</div>
+                                <span class="s3-tag">MANUAL RUN</span>
+                            </div>
+                        </div>
+                        <div class="s3-row-bottom">
+                            <div class="s3-bot-side">
+                                <span class="s3-bot-title">🗣️ トリガーワード設計</span>
+                                <span class="s3-bot-desc">ユーザーの言葉を先回りして description に仕込む</span>
+                            </div>
+                            <div class="s3-match-flow">
+                                <span class="s3-bot-desc">「このPRをレビューして」</span>
+                                <span class="s3-flow-text">➔ 一致 ➔</span>
+                                <span class="s3-bot-desc">"PRレビューに使用する"</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 4: LEVER 2 - CLAUDE.md ==================== -->
+        <div class="slide slide4 theme-blue" id="slide4">
+            <div class="title-area">
+                <h2><span class="title-badge">LEVER 02</span>レバー②: CLAUDE.md による制御</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">プロジェクト固有ルールの設定</div>
+                            <div class="point-desc">CLAUDE.md は起動時に毎回自動で読み込まれる設定ファイル。ここにサブエージェントの呼び出し規則を記述します。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">自動起動パイプラインの構築</div>
+                            <div class="point-desc">「完了報告前に必ず reviewer を自動起動し判定を得ること」のように書くことで、人間が指示せずとも自律稼働します。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">テンプレート制限の強制導入</div>
+                            <div class="point-desc">依頼時に「目的」「出力」「ツール」「境界」の見出し使用を義務付けることで、生成される指示の品質を物理的に高めます。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s4">
+                        <div class="s4-header">📁 CLAUDE.md に記述する指示の仕掛け</div>
+                        <div class="s4-rules">
+                            <div class="s4-rule-item">
+                                <span class="s4-rule-icon">⚙️</span>
+                                <div class="s4-rule-content">
+                                    <span class="s4-rule-title">自律パイプラインの完成</span>
+                                    <span class="s4-rule-desc">「ソースコード変更時は、報告前に必ず〇〇エージェントを起動せよ」と指定し、手動の手間をカット</span>
+                                </div>
+                            </div>
+                            <div class="s4-rule-item">
+                                <span class="s4-rule-icon">📋</span>
+                                <div class="s4-rule-content">
+                                    <span class="s4-rule-title">テンプレート制限の導入</span>
+                                    <span class="s4-rule-desc">「『目的』『出力』『ツール』『境界』の見出しを必ず使用せよ。平文での指示は禁止する」と義務付け、AIに義務的言語化を強いる</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 5: LEVER 3 - HUMAN PROMPT ==================== -->
+        <div class="slide slide5 theme-blue" id="slide5">
+            <div class="title-area">
+                <h2><span class="title-badge">LEVER 03</span>レバー③: 人間からの初期プロンプトの具体性</h2>
+            </div>
+            <div class="s5-main">
+                <div class="s5-cards-container">
+                    <div class="s5-example-card bad">
+                        <div class="s5-card-title">❌ 曖昧な初期指示の例</div>
+                        <div class="s5-bubble">
+「適当にバグを直してテストを書いておいて」
+<br><br>
+⚠️ メインAIは対象範囲やルールを自分で推測するしかなく、不完全な目的を持ったままサブエージェントへ依頼が渡ってしまう。
+                        </div>
+                    </div>
+                    <div class="s5-example-card good">
+                        <div class="s5-card-title">✅ 具体的な初期指示の例</div>
+                        <div class="s5-bubble">
+「src/routes/user.ts に対する型定義のエラーを修正し、完了条件として npm run test:user がグリーンになることを検証してください。なお、データベースへの実際の書き込みはモックし、実際の書き込みテストは『やらないこと』としてください。」
+                        </div>
+                    </div>
+                </div>
+                <div class="s5-footer-note">
+                    <span class="s5-note-icon">💡</span>
+                    <div class="s5-note-text">
+                        <strong>目的の材料を直接渡す:</strong> 「対象ファイル」「完了条件」「やらないこと（非目標）」を人間が明示することで、メインAIは推測に頼ることなく、高品質な目的をそのままクリーンにサブエージェントへマッピングできます。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 6: SUMMARY ==================== -->
+        <div class="slide slide6 theme-yellow" id="slide6">
+            <div class="title-area">
+                <h2><span class="title-badge">SUMMARY</span>プロンプト品質を極める3要素の連携</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">ブレを許さない description</div>
+                            <div class="point-desc">役割を専門的に具体化し、不要な仕事の割り当てや曖昧な目的生成をシャットアウトします。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">タイミングと形式を決める CLAUDE.md</div>
+                            <div class="point-desc">自動起動パイプラインを定義し、テンプレート制限で見出しの義務化（目的の解像度アップ）を強制します。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">正確な材料をインプットする初期指示</div>
+                            <div class="point-desc">対象・完了条件・やらないことを人間から明示し、推測によるエラーや無駄な探索をほぼゼロにします。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s6">
+                        <div class="s6-header">📋 高精度な目的生成のための3ヶ条</div>
+                        <div class="s6-items">
+                            <div class="s6-item">
+                                <span class="s6-badge blue">役割</span>
+                                <span class="s6-item-text">description で「何をする専門家か」を明確にし、ブレを防ぐ</span>
+                            </div>
+                            <div class="s6-item">
+                                <span class="s6-badge purple">制御</span>
+                                <span class="s6-item-text">CLAUDE.md で「見出しによる4要素記述」を物理的に義務化する</span>
+                            </div>
+                            <div class="s6-item">
+                                <span class="s6-badge yellow">材料</span>
+                                <span class="s6-item-text">最初の指示で「対象・完了条件・非目標」をクリーンに提供する</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ==================== 共通ナビゲーションUI ==================== -->
+    <div class="nav-info">
+        <div class="slide-counter" id="counter">1 / 6</div>
+    </div>
+
+    <!-- JavaScript for Slideshow Control -->
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 6;
+
+        function showSlide(slideNumber) {
+            // 現在のアクティブスライドを非表示
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+
+            // 新しいスライドを表示
+            document.getElementById(`slide${slideNumber}`).classList.add('active');
+            
+            // カウンターテキストの更新
+            const counterEl = document.getElementById('counter');
+            counterEl.innerText = `${slideNumber} / ${totalSlides}`;
+            currentSlide = slideNumber;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        function firstSlide() {
+            showSlide(1);
+        }
+
+        function lastSlide() {
+            showSlide(totalSlides);
+        }
+
+        document.addEventListener('keydown', function(event) {
+            // 入力中などの場合はイベントをスルー
+            if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            switch(event.key) {
+                case 'ArrowRight':
+                case ' ':
+                    event.preventDefault();
+                    nextSlide();
+                    break;
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    prevSlide();
+                    break;
+                case 'Home':
+                    event.preventDefault();
+                    firstSlide();
+                    break;
+                case 'End':
+                    event.preventDefault();
+                    lastSlide();
+                    break;
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                    event.preventDefault();
+                    const slideNum = parseInt(event.key);
+                    if (slideNum >= 1 && slideNum <= totalSlides) {
+                        showSlide(slideNum);
+                    }
+                    break;
+            }
+        });
+
+        // 初期ロード時に1ページ目を表示
+        showSlide(1);
+    </script>
+</body>
+</html>

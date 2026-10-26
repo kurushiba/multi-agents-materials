@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>23-4-3 Claude CodeのWorktreeサポート機能 - Udemy講座スライド</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CSS Reset & Variables --- */
+        :root {
+            --primary-color: #FFD600;    /* メイン黄色 */
+            --secondary-color: #25BAE9;  /* サブ青色 */
+            --text-black: #333333;       /* メインテキスト */
+            --background-gray: #EFF3F4;  /* 背景グレー */
+            --white: #FFFFFF;            /* 白背景 */
+            --text-gray: #555555;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --card-shadow: 0 8px 30px rgba(0,0,0,0.04);
+            --transition-speed: 0.4s;
+            --success-color: #22C55E;
+            --accent-purple: #8B5CF6;
+            --danger-color: #EF4444;
+            --warning-color: #F59E0B;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #111111;
+            color: var(--text-black);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- 16:9 Aspect Ratio Slide Container --- */
+        .slide-container {
+            width: 90vw;
+            height: 50.625vw; /* 9/16 * 90vw */
+            max-width: 1600px;
+            max-height: 900px;
+            position: relative;
+            background-color: var(--white);
+            box-shadow: 0 25px 70px rgba(0,0,0,0.6);
+            border-radius: 12px;
+            overflow: hidden;
+            container-type: size;
+            container-name: slide;
+        }
+
+        /* Vertical viewport adjustments */
+        @media (max-aspect-ratio: 16/9) {
+            .slide-container {
+                width: 177.78vh; /* 16/9 * 90vh */
+                height: 90vh;
+            }
+        }
+
+        /* --- Individual Slide Wrapper --- */
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition-speed) cubic-bezier(0.25, 1, 0.5, 1);
+            background-color: var(--white);
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 2;
+        }
+
+        /* Theme Styling options */
+        .slide.theme-blue {
+            background-color: var(--white);
+        }
+
+        .slide.theme-yellow {
+            background-color: var(--background-gray);
+        }
+
+        /* --- Title Area (Header 15%) --- */
+        .title-area {
+            height: 15cqh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 4cqw;
+            position: relative;
+        }
+
+        .slide.theme-yellow .title-area {
+            background-color: var(--primary-color);
+        }
+
+        .slide.theme-blue .title-area {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .title-area h2 {
+            margin: 0;
+            font-size: 2.8cqw;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 1.5cqw;
+        }
+
+        .title-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05cqw;
+            font-weight: 800;
+            background-color: rgba(255, 255, 255, 0.35);
+            color: inherit;
+            padding: 0.4cqh 1.2cqw;
+            border-radius: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .slide.theme-yellow .title-badge {
+            background-color: rgba(0, 0, 0, 0.08);
+            color: var(--text-black);
+        }
+
+        /* --- Main Content Area --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            padding: 4cqh 4cqw 6cqh 4cqw;
+            gap: 4cqw;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 3cqh;
+        }
+
+        .right-panel {
+            width: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Bullet Points */
+        .points-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 3cqh;
+        }
+
+        .points-list li {
+            position: relative;
+            padding-left: 2.5cqw;
+        }
+
+        .points-list li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0.7cqh;
+            width: 1.2cqw;
+            height: 1.2cqw;
+            border-radius: 50%;
+        }
+
+        .slide.theme-yellow .points-list li::before {
+            background-color: var(--secondary-color);
+        }
+
+        .slide.theme-blue .points-list li::before {
+            background-color: var(--primary-color);
+        }
+
+        .point-title {
+            font-size: 1.45cqw;
+            font-weight: 700;
+            color: #111111;
+            margin-bottom: 0.6cqh;
+        }
+
+        .point-desc {
+            font-size: 1.05cqw;
+            color: var(--text-gray);
+            line-height: 1.55;
+            margin: 0;
+        }
+
+        /* --- Navigation Counter Floating (Standard Capsule Style) --- */
+        .nav-info {
+            position: absolute;
+            bottom: 20px;
+            left: 5%;
+            right: 5%;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            font-size: 0.95rem;
+            color: #888;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .slide-counter {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .slide.theme-blue .slide-counter {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .slide.theme-yellow .slide-counter {
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        /* ==========================================================================
+           SLIDE-SPECIFIC CUSTOM DIAGRAM STYLES
+           ========================================================================== */
+
+        /* --- Slide 1: ネイティブ機能の登場 --- */
+        .diagram-s1 {
+            width: 95%;
+            height: 95%;
+            background: rgba(255,255,255,0.85);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .s1-box {
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 1.8cqh 2cqw;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        }
+        .s1-box.human-side {
+            border-color: var(--secondary-color);
+            background: #f0fafd;
+        }
+        .s1-box.agent-side {
+            border-color: var(--accent-purple);
+            background: #fdfaff;
+        }
+        .s1-title {
+            font-size: 1.15cqw;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 0.5cqh;
+        }
+        .s1-desc {
+            font-size: 0.85cqw;
+            color: var(--text-gray);
+            line-height: 1.4;
+        }
+        .s1-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.75cqw;
+            font-weight: 800;
+            padding: 0.2cqh 0.6cqw;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 0.6cqh;
+        }
+        .s1-box.human-side .s1-badge {
+            background: rgba(37, 186, 233, 0.15);
+            color: #0284c7;
+        }
+        .s1-box.agent-side .s1-badge {
+            background: rgba(139, 92, 246, 0.15);
+            color: #6b21a8;
+        }
+        .s1-vs-divider {
+            font-size: 1cqw;
+            font-weight: 900;
+            color: #94a3b8;
+            margin: 0.5cqh 0;
+            text-transform: uppercase;
+        }
+
+        /* --- Slide 2: claude --worktree --- */
+        .diagram-s2 {
+            width: 95%;
+            height: 95%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .s2-cmd-input {
+            background: #1e293b;
+            color: #38bdf8;
+            border-radius: 6px;
+            padding: 1.2cqh 2cqw;
+            width: 90%;
+            font-family: 'Outfit', monospace;
+            font-size: 1.05cqw;
+            font-weight: 700;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 1cqw;
+        }
+        .s2-cmd-prompt {
+            color: #64748b;
+            user-select: none;
+        }
+        .s2-arrow-flow {
+            font-size: 1.5cqw;
+            color: var(--secondary-color);
+            line-height: 1;
+            font-weight: 800;
+        }
+        .s2-steps-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            gap: 1cqw;
+        }
+        .s2-step-card {
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.5cqh 1cqw;
+            width: 31%;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.02);
+            position: relative;
+        }
+        .s2-step-num {
+            position: absolute;
+            top: -1.2cqh;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--secondary-color);
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 0.8cqw;
+            width: 2.2cqh;
+            height: 2.2cqh;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .s2-step-title {
+            font-size: 0.95cqw;
+            font-weight: 800;
+            color: #1e293b;
+            margin-top: 0.5cqh;
+            margin-bottom: 0.5cqh;
+        }
+        .s2-step-desc {
+            font-size: 0.75cqw;
+            color: var(--text-gray);
+            line-height: 1.4;
+        }
+
+        /* --- Slide 3: PRの隔離レビュー --- */
+        .diagram-s3 {
+            width: 95%;
+            height: 95%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .s3-github-bar {
+            background: #f6f8fa;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            padding: 1cqh 1.5cqw;
+            width: 95%;
+            display: flex;
+            align-items: center;
+            gap: 1cqw;
+            font-size: 0.9cqw;
+            font-weight: 700;
+            color: #24292f;
+        }
+        .s3-github-icon {
+            font-size: 1.2cqw;
+        }
+        .s3-pr-tag {
+            background: #cfead3;
+            color: #1a7f37;
+            padding: 0.2cqh 0.6cqw;
+            border-radius: 10px;
+            font-size: 0.7cqw;
+            text-transform: uppercase;
+        }
+        .s3-arrow-down {
+            font-size: 1.4cqw;
+            color: var(--warning-color);
+            font-weight: bold;
+        }
+        .s3-cmd-box {
+            background: #1e293b;
+            color: #f59e0b;
+            border-radius: 6px;
+            padding: 1cqh 2cqw;
+            width: 95%;
+            font-family: 'Outfit', monospace;
+            font-size: 0.95cqw;
+            font-weight: 700;
+            text-align: center;
+        }
+        .s3-isolation-box {
+            background: #fffbeb;
+            border: 2px dashed var(--warning-color);
+            border-radius: 8px;
+            padding: 1.5cqh 2cqw;
+            width: 95%;
+            text-align: center;
+        }
+        .s3-isolation-title {
+            font-size: 1.05cqw;
+            font-weight: 800;
+            color: #b45309;
+            margin-bottom: 0.3cqh;
+        }
+        .s3-isolation-desc {
+            font-size: 0.8cqw;
+            color: #d97706;
+            line-height: 1.4;
+        }
+
+        /* --- Slide 4: isolation: worktree --- */
+        .diagram-s4 {
+            width: 95%;
+            height: 95%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .s4-config-card {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            width: 95%;
+            padding: 1.5cqh 2cqw;
+            font-family: 'Outfit', monospace;
+            font-size: 0.9cqw;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);
+            position: relative;
+        }
+        .s4-config-badge {
+            position: absolute;
+            top: 1cqh;
+            right: 1cqw;
+            background: #cbd5e1;
+            color: #475569;
+            font-size: 0.7cqw;
+            font-weight: 700;
+            padding: 0.2cqh 0.5cqw;
+            border-radius: 4px;
+        }
+        .s4-code-highlight {
+            color: #8b5cf6;
+            font-weight: 800;
+        }
+        .s4-flow-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            height: 48%;
+            margin-top: 1cqh;
+            position: relative;
+        }
+        .s4-lane {
+            width: 47%;
+            height: 100%;
+            background: #faf5ff;
+            border: 1.5px solid rgba(139, 92, 246, 0.25);
+            border-radius: 8px;
+            padding: 1.5cqh 1.2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .s4-lane-header {
+            font-size: 1.05cqw;
+            font-weight: 800;
+            color: #6b21a8;
+            border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+            padding-bottom: 0.5cqh;
+        }
+        .s4-lane-body {
+            font-size: 0.8cqw;
+            color: #5b21b6;
+            line-height: 1.45;
+            margin-top: 0.5cqh;
+        }
+        .s4-lane-footer {
+            font-size: 0.75cqw;
+            font-weight: 700;
+            color: #7c3aed;
+            text-align: right;
+        }
+        .s4-connector {
+            font-size: 1.5cqw;
+            color: var(--accent-purple);
+            font-weight: 800;
+        }
+
+        /* --- Slide 5: 環境の引き継ぎと後片付け --- */
+        .diagram-s5 {
+            width: 95%;
+            height: 95%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .s5-top-feature {
+            background: #f0fdf4;
+            border: 1.5px solid rgba(34, 197, 94, 0.3);
+            border-radius: 8px;
+            padding: 1cqh 2cqw;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 1cqw;
+        }
+        .s5-top-title {
+            font-size: 0.95cqw;
+            font-weight: 800;
+            color: #166534;
+            display: flex;
+            align-items: center;
+            gap: 0.5cqw;
+        }
+        .s5-top-desc {
+            font-size: 0.8cqw;
+            color: #15803d;
+            flex: 1;
+        }
+        .s5-lifecycle-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            gap: 1.5cqw;
+            margin-top: 1cqh;
+            flex: 1;
+        }
+        .s5-lifecycle-card {
+            width: 48%;
+            border-radius: 8px;
+            padding: 1.5cqh 1.2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border: 1.5px solid #cbd5e1;
+        }
+        .s5-lifecycle-card.no-change {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+        .s5-lifecycle-card.has-change {
+            background: #f0f9ff;
+            border-color: rgba(37, 186, 233, 0.3);
+            border-left: 5px solid var(--secondary-color);
+        }
+        .s5-card-header {
+            font-size: 1.05cqw;
+            font-weight: 800;
+            color: #1e293b;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding-bottom: 0.5cqh;
+        }
+        .s5-card-body {
+            font-size: 0.78cqw;
+            color: var(--text-gray);
+            line-height: 1.45;
+            margin-top: 0.5cqh;
+            flex: 1;
+        }
+        .s5-card-footer {
+            font-size: 0.75cqw;
+            font-weight: 700;
+            text-align: right;
+            margin-top: 0.5cqh;
+        }
+        .s5-lifecycle-card.no-change .s5-card-footer { color: #64748b; }
+        .s5-lifecycle-card.has-change .s5-card-footer { color: #0284c7; }
+
+        /* --- Slide 6: Summary --- */
+        .diagram-s6 {
+            width: 95%;
+            height: 90%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2.5cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .s6-header {
+            font-size: 1.15cqw;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.5cqw;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 1cqh;
+            color: #1e293b;
+        }
+        .s6-items {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2cqh;
+        }
+        .s6-item {
+            display: flex;
+            align-items: center;
+            gap: 1cqw;
+            background: #f8fafc;
+            padding: 1.2cqh 1.2cqw;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            border-left: 5px solid var(--secondary-color);
+        }
+        .s6-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.8cqw;
+            font-weight: 800;
+            padding: 0.2cqh 0.6cqw;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        .s6-badge.blue {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+        .s6-badge.yellow {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+        .s6-badge.purple {
+            background: #f3e8ff;
+            color: #6b21a8;
+        }
+        .s6-item-text {
+            font-size: 0.9cqw;
+            font-weight: 600;
+            color: var(--text-black);
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="slide-container">
+
+        <!-- ==================== SLIDE 1: ネイティブ機能の登場 ==================== -->
+        <div class="slide slide1 active theme-yellow" id="slide1">
+            <div class="title-area">
+                <h2><span class="title-badge">NATIVE SUPPORT</span>ネイティブWorktree機能の登場</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">手動Gitコマンドの自動集約</div>
+                            <div class="point-desc">ディレクトリ作成、ブランチ切り出し、環境移動などの手動操作を一切行うことなく、コマンド一発で安全な隔離環境を起動できます。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">用途に合わせた2つのアプローチ</div>
+                            <div class="point-desc">開発者自身の作業を隔離する「人間向けコマンド」と、自動起動されるサブエージェントに適用する「AI向け設定」が用意されています。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">コンフリクトゼロの開発体験</div>
+                            <div class="point-desc">複数AIエージェントの同時並行開発において、作業中の環境干渉を防ぐ「絶対のセキュリティ境界」を構築・制御します。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s1">
+                        <div class="s1-box human-side">
+                            <span class="s1-badge">For Humans</span>
+                            <div class="s1-title">🖥️ claude --worktree</div>
+                            <div class="s1-desc">開発者自身が別の検証やバグ修正を始める際に、一発で隔離スペースを立ち上げるためのCLIコマンド。</div>
+                        </div>
+                        <div class="s1-vs-divider">AND</div>
+                        <div class="s1-box agent-side">
+                            <span class="s1-badge">For Agents</span>
+                            <div class="s1-title">⚙️ isolation: worktree</div>
+                            <div class="s1-desc">サブエージェント定義（YAML）に指定する設定。起動のたびに完全に個別のWorktreeが自動でアサインされます。</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 2: claude --worktree ==================== -->
+        <div class="slide slide2 theme-blue" id="slide2">
+            <div class="title-area">
+                <h2><span class="title-badge">HUMAN CLI</span>人間が作業を隔離するコマンド</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">コマンド一発でセットアップ完了</div>
+                            <div class="point-desc">`claude --worktree <name>`（短縮形 `-w`）を叩くだけで、専用ブランチの作成からチェックアウト、Claude Code起動までが瞬時に完了します。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">専用ブランチとディレクトリの作成</div>
+                            <div class="point-desc">裏側で `.claude/worktrees/<name>/` フォルダが作成され、最新の main から切り出された `worktree-<name>` ブランチが割り当てられます。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">名前省略によるランダム生成</div>
+                            <div class="point-desc">名前を省略して起動すると `bright-running-fox` のような名前がランダムに割り振られ、使い捨てのコード実験を素早く開始できます。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s2">
+                        <div class="s2-cmd-input">
+                            <span class="s2-cmd-prompt">$</span> claude --worktree my-feature
+                        </div>
+                        <div class="s2-arrow-flow">⬇️ 自動化される3つの内部プロセス</div>
+                        <div class="s2-steps-container">
+                            <div class="s2-step-card">
+                                <span class="s2-step-num">1</span>
+                                <div class="s2-step-title">📁 物理フォルダ</div>
+                                <div class="s2-step-desc"><code>.claude/worktrees/my-feature</code> ディレクトリを自動作成</div>
+                            </div>
+                            <div class="s2-step-card">
+                                <span class="s2-step-num">2</span>
+                                <div class="s2-step-title">🌿 専用ブランチ</div>
+                                <div class="s2-step-desc">最新のmainから <code>worktree-my-feature</code> をチェックアウト</div>
+                            </div>
+                            <div class="s2-step-card">
+                                <span class="s2-step-num">3</span>
+                                <div class="s2-step-title">🤖 隔離セッション</div>
+                                <div class="s2-step-desc">隔離スペース内で自動的にClaude Codeが即時起動</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 3: PRの隔離レビュー ==================== -->
+        <div class="slide slide3 theme-yellow" id="slide3">
+            <div class="title-area">
+                <h2><span class="title-badge">PR REVIEW</span>他人のPRを安全に手元で検証</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">他人のPRを手間なくローカル起動</div>
+                            <div class="point-desc">`claude --worktree "#1234"` のようにプルリクエスト番号やURLを指定するだけで、そのPRが適用された隔離セッションが起動します。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">手元の書きかけ環境を汚さない</div>
+                            <div class="point-desc">自分の作業中の変更をStashで退避したり、ブランチを破壊的にスイッチする必要は全くありません。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">AIと共同で動作確認・検証</div>
+                            <div class="point-desc">隔離環境内で「このPRのテストを実行して」「変更箇所の懸念点をレビューして」とAIに指示しながら、安全に検証を進められます。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s3">
+                        <div class="s3-github-bar">
+                            <span class="s3-github-icon">🐙</span>
+                            <span>Pull Request #1234</span>
+                            <span class="s3-pr-tag">Open</span>
+                            <span style="color: #57606a; font-weight: normal; margin-left: auto;">feature/add-auth</span>
+                        </div>
+                        <div class="s3-arrow-down">⬇️ 手元で即レビュー開始</div>
+                        <div class="s3-cmd-box">
+                            claude --worktree "#1234"
+                        </div>
+                        <div class="s3-isolation-box">
+                            <div class="s3-isolation-title">🛡️ 完全に分離された隔離レビュー環境</div>
+                            <div class="s3-isolation-desc">
+                                自分の元の書きかけコードはそのまま維持。<br>
+                                隣のフォルダでPRコードが動作し、AIとテスト可能。
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 4: isolation: worktree ==================== -->
+        <div class="slide slide4 theme-blue" id="slide4">
+            <div class="title-area">
+                <h2><span class="title-badge">AGENT SETTING</span>サブエージェント用の隔離設定</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">サブエージェント定義（YAML）に記述</div>
+                            <div class="point-desc">サブエージェント定義ファイルのYAMLフロントマターに `isolation: worktree` を追記するだけで有効化されます。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">起動時に専用Worktreeを自動割当</div>
+                            <div class="point-desc">AIエージェントが起動されるたびに、システムがバックグラウンドで一時的なWorktreeと専用ブランチを自動生成します。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">複数AIの並列稼働によるファイル競合防止</div>
+                            <div class="point-desc">同じ作業ディレクトリの共有による上書き事故を100%防止し、各エージェントが異なるタスクを同時に実行できます。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s4">
+                        <div class="s4-config-card">
+                            <span class="s4-config-badge">agent-config.md</span>
+                            ---<br>
+                            name: refactoring-expert<br>
+                            <span class="s4-code-highlight">isolation: worktree</span><br>
+                            ---
+                        </div>
+                        <div class="s4-connector">⬇️ 起動時に自律的に並列隔離</div>
+                        <div class="s4-flow-row">
+                            <div class="s4-lane">
+                                <div class="s4-lane-header">🌿 AI Agent A</div>
+                                <div class="s4-lane-body">
+                                    <code>.claude/worktrees/agent-hash1</code><br>
+                                    で自律起動。干渉なしでリファクタリング実行。
+                                </div>
+                                <div class="s4-lane-footer">✅ 完全に隔離</div>
+                            </div>
+                            <div class="s4-lane">
+                                <div class="s4-lane-header">🌿 AI Agent B</div>
+                                <div class="s4-lane-body">
+                                    <code>.claude/worktrees/agent-hash2</code><br>
+                                    で同時に自律起動。別ブランチで安全にテスト。
+                                </div>
+                                <div class="s4-lane-footer">✅ 完全に隔離</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 5: 環境の引き継ぎと後片付け ==================== -->
+        <div class="slide slide5 theme-blue" id="slide5">
+            <div class="title-area">
+                <h2><span class="title-badge">CLEANUP & ASSETS</span>環境の維持とスマートな自動消滅</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">`.worktreeinclude` で環境引継ぎ</div>
+                            <div class="point-desc">`.gitignore`されている`.env`などの未追跡ファイルを指定しておくと、隔離環境に自動でコピーされます。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">「変更なし」なら跡形もなく自動消滅</div>
+                            <div class="point-desc">サブエージェントがコードの参照のみで一切変更を行わなかった場合、Worktreeのディレクトリとブランチは自動で削除されます。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">「変更あり」ならパスとブランチを報告</div>
+                            <div class="point-desc">編集やコミットが発生した場合は消去せず残し、「成果物はここです」と親エージェントや人間にパスを報告してくれます。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s5">
+                        <div class="s5-top-feature">
+                            <span style="font-size: 1.1cqw;">⚙️</span>
+                            <div class="s5-top-title">.worktreeinclude</div>
+                            <div class="s5-top-desc">.env などのGit管理外ファイルを隔離先へ自動で複製</div>
+                        </div>
+                        <div class="s5-lifecycle-container">
+                            <div class="s5-lifecycle-card no-change">
+                                <div class="s5-card-header">📂 1. コードの参照のみ (変更なし)</div>
+                                <div class="s5-card-body">
+                                    サブエージェントがコードを読んだだけで、ファイルの編集やコミットをしなかった場合。
+                                </div>
+                                <div class="s5-card-footer">🧹 自動で跡形もなく即削除</div>
+                            </div>
+                            <div class="s5-lifecycle-card has-change">
+                                <div class="s5-card-header">💾 2. 編集やコミットあり (変更あり)</div>
+                                <div class="s5-card-body">
+                                    成果物を残してWorktreeは保持。<br>
+                                    <strong>「成果物は〇〇パス、××ブランチにあります」</strong>と親へ絶対パスをレポート。
+                                </div>
+                                <div class="s5-card-footer">📢 報告してWorktreeを保持</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 6: SUMMARY ==================== -->
+        <div class="slide slide6 theme-yellow" id="slide6">
+            <div class="title-area">
+                <h2><span class="title-badge">SUMMARY</span>ネイティブWorktree機能のまとめ</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">開発者のための `--worktree` オプション</div>
+                            <div class="point-desc">Stashでの退避やブランチ移動の手間をなくし、別ブランチの作業や他人のPRレビューセッションをコマンド1つで安全に開始できます。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">自律AIのための `isolation: worktree`</div>
+                            <div class="point-desc">YAMLに1行追記するだけで、サブエージェントが自律的に専用ブランチを切り出して動くため、並列開発で競合が起きる心配がなくなります。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">ライフサイクルのスマート自動化</div>
+                            <div class="point-desc">`.worktreeinclude` による未追跡ファイル自動引継ぎと、終了時の「変更なし➔自動削除」「変更あり➔パス報告」のクリーンアップにより運用コストゼロを実現。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s6">
+                        <div class="s6-header">
+                            📋 スライドの重要まとめチェックリスト
+                        </div>
+                        <div class="s6-items">
+                            <div class="s6-item">
+                                <span class="s6-badge blue">人間用</span>
+                                <span class="s6-item-text"><code>claude --worktree</code> で自分の環境を汚さずにバグ修正やPRレビューを起動</span>
+                            </div>
+                            <div class="s6-item">
+                                <span class="s6-badge yellow">AI用</span>
+                                <span class="s6-item-text"><code>isolation: worktree</code> をサブエージェントに設定し、複数AIの並列稼働を可能にする</span>
+                            </div>
+                            <div class="s6-item">
+                                <span class="s6-badge purple">自動化</span>
+                                <span class="s6-item-text">環境複製（引継ぎ）から終了時のクリーンアップ・成果物のパス報告まで自動管理</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ==================== 共通ナビゲーションUI ==================== -->
+    <div class="nav-info">
+        <div class="slide-counter" id="counter">1 / 6</div>
+    </div>
+
+    <!-- JavaScript for Slideshow Control -->
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 6;
+
+        function showSlide(slideNumber) {
+            // 現在のアクティブスライドを非表示
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+
+            // 新しいスライドを表示
+            document.getElementById(`slide${slideNumber}`).classList.add('active');
+            
+            // カウンターテキストの更新
+            const counterEl = document.getElementById('counter');
+            counterEl.innerText = `${slideNumber} / ${totalSlides}`;
+            currentSlide = slideNumber;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        function firstSlide() {
+            showSlide(1);
+        }
+
+        function lastSlide() {
+            showSlide(totalSlides);
+        }
+
+        document.addEventListener('keydown', function(event) {
+            // 入力中などの場合はイベントをスルー
+            if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            switch(event.key) {
+                case 'ArrowRight':
+                case ' ':
+                    event.preventDefault();
+                    nextSlide();
+                    break;
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    prevSlide();
+                    break;
+                case 'Home':
+                    event.preventDefault();
+                    firstSlide();
+                    break;
+                case 'End':
+                    event.preventDefault();
+                    lastSlide();
+                    break;
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                    event.preventDefault();
+                    const slideNum = parseInt(event.key);
+                    if (slideNum >= 1 && slideNum <= totalSlides) {
+                        showSlide(slideNum);
+                    }
+                    break;
+            }
+        });
+
+        // 初期ロード時に1ページ目を表示
+        showSlide(1);
+    </script>
+</body>
+</html>

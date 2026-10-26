@@ -1,0 +1,1260 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      23-4-1 Git Worktreeの基礎とAI並列開発の相性 - Udemy講座スライド
+    </title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Outfit:wght@400;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* --- CSS Reset & Variables --- */
+      :root {
+        --primary-color: #ffd600; /* メイン黄色 */
+        --secondary-color: #25bae9; /* サブ青色 */
+        --text-black: #333333; /* メインテキスト */
+        --background-gray: #eff3f4; /* 背景グレー */
+        --white: #ffffff; /* 白背景 */
+        --text-gray: #555555;
+        --border-color: rgba(0, 0, 0, 0.08);
+        --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+        --transition-speed: 0.4s;
+        --success-color: #22c55e;
+        --accent-purple: #8b5cf6;
+        --danger-color: #ef4444;
+        --warning-color: #f59e0b;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo,
+          sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #111111;
+        color: var(--text-black);
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      /* --- 16:9 Aspect Ratio Slide Container --- */
+      .slide-container {
+        width: 90vw;
+        height: 50.625vw; /* 9/16 * 90vw */
+        max-width: 1600px;
+        max-height: 900px;
+        position: relative;
+        background-color: var(--white);
+        box-shadow: 0 25px 70px rgba(0, 0, 0, 0.6);
+        border-radius: 12px;
+        overflow: hidden;
+        container-type: size;
+        container-name: slide;
+      }
+
+      /* Vertical viewport adjustments */
+      @media (max-aspect-ratio: 16/9) {
+        .slide-container {
+          width: 177.78vh; /* 16/9 * 90vh */
+          height: 90vh;
+        }
+      }
+
+      /* --- Individual Slide Wrapper --- */
+      .slide {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: flex;
+        flex-direction: column;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity var(--transition-speed)
+          cubic-bezier(0.25, 1, 0.5, 1);
+        background-color: var(--white);
+        z-index: 1;
+      }
+
+      .slide.active {
+        opacity: 1;
+        pointer-events: auto;
+        z-index: 2;
+      }
+
+      /* Theme Styling options */
+      .slide.theme-blue {
+        background-color: var(--white);
+      }
+
+      .slide.theme-yellow {
+        background-color: var(--background-gray);
+      }
+
+      /* --- Title Area (Header 15%) --- */
+      .title-area {
+        height: 15cqh;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        padding: 0 4cqw;
+        position: relative;
+      }
+
+      .slide.theme-yellow .title-area {
+        background-color: var(--primary-color);
+      }
+
+      .slide.theme-blue .title-area {
+        background-color: var(--secondary-color);
+        color: var(--white);
+      }
+
+      .title-area h2 {
+        margin: 0;
+        font-size: 2.8cqw;
+        font-weight: 900;
+        letter-spacing: -0.5px;
+        display: flex;
+        align-items: center;
+        gap: 1.5cqw;
+      }
+
+      .title-badge {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.05cqw;
+        font-weight: 800;
+        background-color: rgba(255, 255, 255, 0.35);
+        color: inherit;
+        padding: 0.4cqh 1.2cqw;
+        border-radius: 30px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .slide.theme-yellow .title-badge {
+        background-color: rgba(0, 0, 0, 0.08);
+        color: var(--text-black);
+      }
+
+      /* --- Main Content Area --- */
+      .main-content {
+        flex: 1;
+        display: flex;
+        padding: 4cqh 4cqw 6cqh 4cqw;
+        gap: 4cqw;
+        overflow: hidden;
+      }
+
+      .left-panel {
+        width: 50%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 3cqh;
+      }
+
+      .right-panel {
+        width: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+
+      /* Bullet Points */
+      .points-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 3cqh;
+      }
+
+      .points-list li {
+        position: relative;
+        padding-left: 2.5cqw;
+      }
+
+      .points-list li::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0.7cqh;
+        width: 1.2cqw;
+        height: 1.2cqw;
+        border-radius: 50%;
+      }
+
+      .slide.theme-yellow .points-list li::before {
+        background-color: var(--secondary-color);
+      }
+
+      .slide.theme-blue .points-list li::before {
+        background-color: var(--primary-color);
+      }
+
+      .point-title {
+        font-size: 1.45cqw;
+        font-weight: 700;
+        color: #111111;
+        margin-bottom: 0.6cqh;
+      }
+
+      .point-desc {
+        font-size: 1.05cqw;
+        color: var(--text-gray);
+        line-height: 1.55;
+        margin: 0;
+      }
+
+      /* --- Navigation Counter Floating (Standard Capsule Style) --- */
+      .nav-info {
+        position: absolute;
+        bottom: 20px;
+        left: 5%;
+        right: 5%;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        font-size: 0.95rem;
+        color: #888;
+        pointer-events: none;
+        z-index: 100;
+      }
+
+      .slide-counter {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 700;
+        font-size: 1.1rem;
+        background: rgba(0, 0, 0, 0.05);
+        padding: 4px 12px;
+        border-radius: 20px;
+      }
+
+      .slide.theme-blue .slide-counter {
+        background: rgba(0, 0, 0, 0.05);
+      }
+
+      .slide.theme-yellow .slide-counter {
+        background: rgba(255, 255, 255, 0.6);
+      }
+
+      /* ==========================================================================
+           SLIDE-SPECIFIC CUSTOM DIAGRAM STYLES
+           ========================================================================== */
+
+      /* --- Slide 1: 従来の並行作業の課題 --- */
+      .diagram-s1 {
+        width: 95%;
+        height: 95%;
+        background: rgba(255, 255, 255, 0.85);
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        padding: 3cqh 2cqw;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+      }
+      .s1-box {
+        background: #ffffff;
+        border: 2px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 1.5cqh 2cqw;
+        width: 90%;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+        position: relative;
+      }
+      .s1-box.active-work {
+        border-color: var(--secondary-color);
+        background: #f0fafd;
+      }
+      .s1-box.interrupted {
+        border-color: var(--warning-color);
+        background: #fffbeb;
+      }
+      .s1-box-title {
+        font-size: 1.15cqw;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 0.5cqh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5cqw;
+      }
+      .s1-box-desc {
+        font-size: 0.85cqw;
+        color: var(--text-gray);
+      }
+      .s1-arrow {
+        font-size: 1.2cqw;
+        color: var(--secondary-color);
+        line-height: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-weight: 800;
+        margin: 0.5cqh 0;
+      }
+      .s1-arrow-text {
+        font-size: 0.75cqw;
+        color: var(--danger-color);
+        font-weight: 800;
+        margin-top: 0.2cqh;
+      }
+      .s1-flow-container {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        gap: 1cqw;
+        margin-top: 0.5cqh;
+      }
+      .s1-flow-card {
+        background: #ffffff;
+        border: 1.5px dashed #cbd5e1;
+        border-radius: 6px;
+        padding: 1cqh 0.8cqw;
+        width: 48%;
+        text-align: center;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.01);
+      }
+      .s1-flow-card.stash {
+        border-color: var(--warning-color);
+        background: #fffbeb;
+      }
+      .s1-flow-card.switch {
+        border-color: var(--danger-color);
+        background: #fef2f2;
+      }
+      .s1-flow-tag {
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.7cqw;
+        font-weight: 800;
+        padding: 0.2cqh 0.6cqw;
+        border-radius: 4px;
+        display: inline-block;
+        margin-bottom: 0.5cqh;
+      }
+      .s1-flow-card.stash .s1-flow-tag {
+        background: rgba(245, 158, 11, 0.15);
+        color: #d97706;
+      }
+      .s1-flow-card.switch .s1-flow-tag {
+        background: rgba(239, 68, 68, 0.15);
+        color: #dc2626;
+      }
+      .s1-flow-title {
+        font-size: 0.9cqw;
+        font-weight: 700;
+        color: #1e293b;
+      }
+      .s1-flow-desc {
+        font-size: 0.75cqw;
+        color: var(--text-gray);
+        margin-top: 0.2cqh;
+      }
+
+      /* --- Slide 2: Git Worktree --- */
+      .diagram-s2 {
+        width: 95%;
+        height: 95%;
+        background: white;
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        padding: 3cqh 2cqw;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .s2-repo-core {
+        background: #f1f5f9;
+        border: 2px solid #94a3b8;
+        border-radius: 10px;
+        padding: 1.5cqh 3cqw;
+        width: 80%;
+        text-align: center;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      }
+      .s2-repo-title {
+        font-size: 1.2cqw;
+        font-weight: 800;
+        color: #334155;
+      }
+      .s2-repo-desc {
+        font-size: 0.8cqw;
+        color: #64748b;
+      }
+      .s2-branches-container {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        position: relative;
+        margin-top: 2cqh;
+      }
+      .s2-branches-container::before {
+        content: '';
+        position: absolute;
+        top: -2cqh;
+        left: 25%;
+        right: 25%;
+        height: 2px;
+        background: #cbd5e1;
+        z-index: 1;
+      }
+      .s2-branch-line-l {
+        position: absolute;
+        top: -2cqh;
+        left: 25%;
+        width: 2px;
+        height: 2cqh;
+        background: #cbd5e1;
+      }
+      .s2-branch-line-r {
+        position: absolute;
+        top: -2cqh;
+        right: 25%;
+        width: 2px;
+        height: 2cqh;
+        background: #cbd5e1;
+      }
+      .s2-branch-card {
+        background: #ffffff;
+        border: 2px solid var(--secondary-color);
+        border-radius: 8px;
+        padding: 1.5cqh 1.5cqw;
+        width: 45%;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(37, 186, 233, 0.08);
+        z-index: 2;
+      }
+      .s2-branch-badge {
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.75cqw;
+        font-weight: 800;
+        background: #e0f2fe;
+        color: #0284c7;
+        padding: 0.2cqh 0.6cqw;
+        border-radius: 4px;
+        display: inline-block;
+        margin-bottom: 0.5cqh;
+      }
+      .s2-branch-title {
+        font-size: 1.05cqw;
+        font-weight: 800;
+        color: #1e293b;
+      }
+      .s2-branch-desc {
+        font-size: 0.8cqw;
+        color: var(--text-gray);
+        margin-top: 0.3cqh;
+      }
+
+      /* --- Slide 3: AIエージェント並行開発の壁 --- */
+      .diagram-s3 {
+        width: 95%;
+        height: 95%;
+        background: #fffeb;
+        border: 2px solid var(--danger-color);
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        padding: 3cqh 2cqw;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .s3-agents-row {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        padding: 0 4cqw;
+      }
+      .s3-agent-box {
+        background: #ffffff;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1cqh 1.5cqw;
+        text-align: center;
+        width: 40%;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.02);
+      }
+      .s3-agent-title {
+        font-size: 1.05cqw;
+        font-weight: 800;
+        color: #1e293b;
+      }
+      .s3-agent-action {
+        font-size: 0.8cqw;
+        color: var(--text-gray);
+        margin-top: 0.3cqh;
+      }
+      .s3-conflict-zone {
+        background: #fef2f2;
+        border: 2px dashed var(--danger-color);
+        border-radius: 10px;
+        padding: 2cqh 2cqw;
+        width: 90%;
+        text-align: center;
+        position: relative;
+        margin-top: 1cqh;
+      }
+      .s3-conflict-badge {
+        position: absolute;
+        top: -1.5cqh;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--danger-color);
+        color: white;
+        font-weight: 900;
+        font-size: 0.8cqw;
+        padding: 0.2cqh 1cqw;
+        border-radius: 4px;
+        box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3);
+      }
+      .s3-conflict-title {
+        font-size: 1.15cqw;
+        font-weight: 800;
+        color: #991b1b;
+        margin-top: 0.5cqh;
+      }
+      .s3-conflict-desc {
+        font-size: 0.85cqw;
+        color: #b91c1c;
+        margin-top: 0.5cqh;
+        line-height: 1.4;
+      }
+      .s3-arrows-down {
+        display: flex;
+        justify-content: space-around;
+        width: 100%;
+        color: var(--danger-color);
+        font-size: 1.5cqw;
+        font-weight: bold;
+        margin: 0.5cqh 0;
+      }
+
+      /* --- Slide 4: Worktreeによる競合の物理的解決 --- */
+      .diagram-s4 {
+        width: 95%;
+        height: 95%;
+        background: white;
+        border: 2px solid var(--success-color);
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        padding: 3cqh 2cqw;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .s4-row {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        height: 44%;
+        gap: 1.5cqw;
+      }
+      .s4-lane {
+        width: 48%;
+        background: #f0fdf4;
+        border: 1.5px solid rgba(34, 197, 94, 0.3);
+        border-radius: 8px;
+        padding: 1.5cqh 1.2cqw;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .s4-lane.lane-1 {
+        border-left: 5px solid var(--secondary-color);
+      }
+      .s4-lane.lane-2 {
+        border-left: 5px solid var(--accent-purple);
+      }
+      .s4-lane-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(34, 197, 94, 0.15);
+        padding-bottom: 0.5cqh;
+      }
+      .s4-lane-title {
+        font-size: 1.05cqw;
+        font-weight: 800;
+        color: #166534;
+      }
+      .s4-lane-badge {
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.7cqw;
+        font-weight: 800;
+        background: rgba(34, 197, 94, 0.15);
+        color: #166534;
+        padding: 0.1cqh 0.5cqw;
+        border-radius: 4px;
+      }
+      .s4-lane-body {
+        font-size: 0.8cqw;
+        color: #3f6212;
+        margin-top: 0.5cqh;
+        line-height: 1.4;
+      }
+      .s4-lane-footer {
+        font-size: 0.75cqw;
+        font-weight: 700;
+        color: #15803d;
+        text-align: right;
+        margin-top: 0.5cqh;
+      }
+      .s4-divider-text {
+        font-size: 0.85cqw;
+        font-weight: 800;
+        color: var(--success-color);
+        background: #f0fdf4;
+        padding: 0.4cqh 1.5cqw;
+        border-radius: 20px;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        margin: 0.5cqh 0;
+      }
+
+      /* --- Slide 5: 4つのコツ (2x2 Grid) --- */
+      .diagram-s5 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        width: 95%;
+        height: 95%;
+        gap: 1.5cqw;
+      }
+      .s5-card {
+        background: white;
+        border: 2px solid var(--border-color);
+        border-radius: 10px;
+        box-shadow: var(--card-shadow);
+        padding: 2cqh 1.5cqw;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+      }
+      .s5-card.c1 {
+        border-left: 5px solid var(--secondary-color);
+      }
+      .s5-card.c2 {
+        border-left: 5px solid var(--accent-purple);
+      }
+      .s5-card.c3 {
+        border-left: 5px solid var(--primary-color);
+      }
+      .s5-card.c4 {
+        border-left: 5px solid var(--success-color);
+      }
+
+      .s5-card-title {
+        font-size: 1.15cqw;
+        font-weight: 800;
+        color: #1e293b;
+        margin-bottom: 0.6cqh;
+        display: flex;
+        align-items: center;
+        gap: 0.5cqw;
+      }
+      .s5-card-desc {
+        font-size: 0.85cqw;
+        color: var(--text-gray);
+        line-height: 1.45;
+      }
+      .s5-card-num {
+        position: absolute;
+        top: 1.2cqh;
+        right: 1cqw;
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.3cqw;
+        font-weight: 900;
+        color: #cbd5e1;
+      }
+
+      /* --- Slide 6: Summary --- */
+      .diagram-s6 {
+        width: 95%;
+        height: 90%;
+        background: white;
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        padding: 3cqh 2.5cqw;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .s6-header {
+        font-size: 1.15cqw;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        gap: 0.5cqw;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 1cqh;
+        color: #1e293b;
+      }
+      .s6-items {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2cqh;
+      }
+      .s6-item {
+        display: flex;
+        align-items: center;
+        gap: 1cqw;
+        background: #f8fafc;
+        padding: 1.2cqh 1.2cqw;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        border-left: 5px solid var(--secondary-color);
+      }
+      .s6-badge {
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.8cqw;
+        font-weight: 800;
+        padding: 0.2cqh 0.6cqw;
+        border-radius: 4px;
+        text-transform: uppercase;
+      }
+      .s6-badge.blue {
+        background: #e0f2fe;
+        color: #0369a1;
+      }
+      .s6-badge.yellow {
+        background: #fef9c3;
+        color: #854d0e;
+      }
+      .s6-badge.purple {
+        background: #f3e8ff;
+        color: #6b21a8;
+      }
+      .s6-item-text {
+        font-size: 0.9cqw;
+        font-weight: 600;
+        color: var(--text-black);
+        flex: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide-container">
+      <!-- ==================== SLIDE 1: 従来の並行作業の課題 ==================== -->
+      <div class="slide slide1 active theme-yellow" id="slide1">
+        <div class="title-area">
+          <h2>
+            <span class="title-badge">GIT LIMITATION</span
+            >従来の並行作業における課題
+          </h2>
+        </div>
+        <div class="main-content">
+          <div class="left-panel">
+            <ul class="points-list">
+              <li>
+                <div class="point-title">1リポジトリ = 1作業ディレクトリ</div>
+                <div class="point-desc">
+                  Gitの標準的な運用では、1つのクローンされたリポジトリに対して作業できるフォルダは物理的に1つだけという制限があります。
+                </div>
+              </li>
+              <li>
+                <div class="point-title">ブランチ切り替え時の手間</div>
+                <div class="point-desc">
+                  書きかけのコードがある状態で別の緊急タスクを頼まれると、`git
+                  stash`
+                  を使って一旦変更を退避し、ブランチを切り替える必要があります。
+                </div>
+              </li>
+              <li>
+                <div class="point-title">退避忘れやコンフリクトのリスク</div>
+                <div class="point-desc">
+                  退避や復元の手順は地味に手間で、退避を忘れて別のブランチで作業してしまうと、思わぬ衝突や書き換えが起こり得ます。
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div class="right-panel">
+            <div class="diagram-s1">
+              <div class="s1-box active-work">
+                <div class="s1-box-title">💻 開発中の作業ディレクトリ</div>
+                <div class="s1-box-desc">
+                  機能Aのコードを書きかけの状態（未コミット）
+                </div>
+              </div>
+              <div class="s1-arrow">
+                ⚡
+                <span class="s1-arrow-text">緊急のバグ修正が発生！</span>
+              </div>
+              <div class="s1-flow-container">
+                <div class="s1-flow-card stash">
+                  <span class="s1-flow-tag">STEP 1</span>
+                  <div class="s1-flow-title">📦 git stash</div>
+                  <div class="s1-flow-desc">書きかけのコードを一時退避</div>
+                </div>
+                <div class="s1-flow-card switch">
+                  <span class="s1-flow-tag">STEP 2</span>
+                  <div class="s1-flow-title">🔄 git checkout</div>
+                  <div class="s1-flow-desc">修正用ブランチへ切り替え</div>
+                </div>
+              </div>
+              <div class="s1-arrow" style="margin-top: 0.5cqh">⬇️</div>
+              <div class="s1-box interrupted">
+                <div class="s1-box-title">⚠️ 並行作業がしづらい</div>
+                <div class="s1-box-desc">
+                  いちいち変更を退避させて行ったり来たりする必要がある
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== SLIDE 2: GIT WORKTREE ==================== -->
+      <div class="slide slide2 theme-blue" id="slide2">
+        <div class="title-area">
+          <h2>
+            <span class="title-badge">GIT WORKTREE</span>Git
+            Worktreeによる新しい解決策
+          </h2>
+        </div>
+        <div class="main-content">
+          <div class="left-panel">
+            <ul class="points-list">
+              <li>
+                <div class="point-title">
+                  独立した作業ディレクトリを複数作成
+                </div>
+                <div class="point-desc">
+                  1つのGitリポジトリ（内部データ）を共有しながら、異なるブランチをチェックアウトした作業ディレクトリを物理的に複数作れる機能です。
+                </div>
+              </li>
+              <li>
+                <div class="point-title">`stash` 無しで並行開発</div>
+                <div class="point-desc">
+                  元のディレクトリを変更することなく、別ブランチの作業スペースを隣のフォルダに作れるため、変更の退避やブランチの切り替えが一切不要になります。
+                </div>
+              </li>
+              <li>
+                <div class="point-title">軽量かつ瞬時の立ち上げ</div>
+                <div class="point-desc">
+                  `git clone`
+                  で丸ごと複製するのとは異なり、Gitの管理メタデータは共通のものを参照するため、一瞬で超軽量な追加作業ディレクトリを作成できます。
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div class="right-panel">
+            <div class="diagram-s2">
+              <div class="s2-repo-core">
+                <div class="s2-repo-title">📁 共通のGitデータ (.git)</div>
+                <div class="s2-repo-desc">
+                  履歴データや管理情報は1箇所で一元管理
+                </div>
+              </div>
+              <div class="s2-branches-container">
+                <div class="s2-branch-line-l"></div>
+                <div class="s2-branch-line-r"></div>
+                <div class="s2-branch-card">
+                  <span class="s2-branch-badge">DIRECTORY A</span>
+                  <div class="s2-branch-title">🌿 機能A開発スペース</div>
+                  <div class="s2-branch-desc">feature/func-a ブランチ</div>
+                </div>
+                <div class="s2-branch-card">
+                  <span class="s2-branch-badge">DIRECTORY B</span>
+                  <div class="s2-branch-title">🛠️ バグ修正スペース</div>
+                  <div class="s2-branch-desc">hotfix/bug-b ブランチ</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== SLIDE 3: AIエージェント並行開発の壁 ==================== -->
+      <div class="slide slide3 theme-yellow" id="slide3">
+        <div class="title-area">
+          <h2>
+            <span class="title-badge">AGENT CONFLICT</span
+            >複数AIの同時稼働が引き起こす衝突
+          </h2>
+        </div>
+        <div class="main-content">
+          <div class="left-panel">
+            <ul class="points-list">
+              <li>
+                <div class="point-title">AIはファイルを直接書き換える</div>
+                <div class="point-desc">
+                  AIエージェントは、指示された作業ディレクトリの中のコードを自動で読み込み、編集・保存してタスクを進めます。
+                </div>
+              </li>
+              <li>
+                <div class="point-title">同一フォルダでの並行作業の崩壊</div>
+                <div class="point-desc">
+                  同じ作業ディレクトリで複数のAIを同時に動かすと、お互いが気づかないうちに同じファイルを上書きしてしまいます。
+                </div>
+              </li>
+              <li>
+                <div class="point-title">変更の「上書き消滅」が発生</div>
+                <div class="point-desc">
+                  AI 1が編集した結果を、AI
+                  2が古い状態を基にした編集内容で上書き保存し、成果物が台無しになる危険性があります。
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div class="right-panel">
+            <div class="diagram-s3">
+              <div class="s3-agents-row">
+                <div class="s3-agent-box">
+                  <div class="s3-agent-title">🤖 AI 1</div>
+                  <div class="s3-agent-action">ログイン機能実装</div>
+                </div>
+                <div class="s3-agent-box">
+                  <div class="s3-agent-title">🤖 AI 2</div>
+                  <div class="s3-agent-action">決済機能実装</div>
+                </div>
+              </div>
+              <div class="s3-arrows-down">
+                <span>⬇️</span>
+                <span>⬇️</span>
+              </div>
+              <div class="s3-conflict-zone">
+                <span class="s3-conflict-badge">CRITICAL EXCLUSION ERROR</span>
+                <div class="s3-conflict-title">📁 同一の作業フォルダ</div>
+                <div class="s3-conflict-desc">
+                  AI 1が書き換えた <code>app.js</code> を、<br />
+                  AI 2が古いファイルを基に上書き保存してしまい<br />
+                  <strong>AI 1の変更が消失！</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== SLIDE 4: Worktreeによる競合の物理的解決 ==================== -->
+      <div class="slide slide4 theme-blue" id="slide4">
+        <div class="title-area">
+          <h2>
+            <span class="title-badge">PHYSICAL ISOLATION</span
+            >Worktreeで物理的な競合を防ぐ
+          </h2>
+        </div>
+        <div class="main-content">
+          <div class="left-panel">
+            <ul class="points-list">
+              <li>
+                <div class="point-title">物理フォルダをAIごとに切り分ける</div>
+                <div class="point-desc">
+                  各AIエージェントに対して、Git
+                  Worktreeで生成した個別の作業ディレクトリをそれぞれ割り当てます。
+                </div>
+              </li>
+              <li>
+                <div class="point-title">
+                  ファイルの完全な分離による衝突回避
+                </div>
+                <div class="point-desc">
+                  物理的に書き込む場所が別フォルダとして切り離されるため、エージェント同士が同じファイルを書き換え合う事故が100%防げます。
+                </div>
+              </li>
+              <li>
+                <div class="point-title">自律並行マルチエージェントの実現</div>
+                <div class="point-desc">
+                  人間が仲介してファイルの退避を指示することなく、複数のAIが並行して異なるタスクを安全に高速開発できます。
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div class="right-panel">
+            <div class="diagram-s4">
+              <div class="s4-row">
+                <div class="s4-lane lane-1">
+                  <div class="s4-lane-header">
+                    <span class="s4-lane-title">🤖 AIエージェント 1</span>
+                    <span class="s4-lane-badge">Worktree 1</span>
+                  </div>
+                  <div class="s4-lane-body">
+                    ログイン機能用のフォルダで、ファイルを自由に読込・編集。他のAIから干渉されません。
+                  </div>
+                  <div class="s4-lane-footer">✅ 物理的に隔離</div>
+                </div>
+                <div class="s4-lane lane-2">
+                  <div class="s4-lane-header">
+                    <span class="s4-lane-title">🤖 AIエージェント 2</span>
+                    <span class="s4-lane-badge">Worktree 2</span>
+                  </div>
+                  <div class="s4-lane-body">
+                    決済機能用のフォルダで、安全に編集. AI
+                    1のファイルを上書きする心配なし。
+                  </div>
+                  <div class="s4-lane-footer">✅ 物理的に隔離</div>
+                </div>
+              </div>
+              <div class="s4-divider-text">
+                🛡️ ファイル競合リスクを完全にゼロ化
+              </div>
+              <div class="s4-row" style="height: auto">
+                <div
+                  style="
+                    width: 100%;
+                    text-align: center;
+                    font-size: 0.95cqw;
+                    font-weight: 700;
+                    color: #15803d;
+                    background: #e8f5e9;
+                    padding: 1cqh;
+                    border-radius: 6px;
+                  "
+                >
+                  💡 各々のAIが完全に独立した別ブランチで作業に集中できる！
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== SLIDE 5: 並列開発における4つのコツ ==================== -->
+      <div class="slide slide5 theme-blue" id="slide5">
+        <div class="title-area">
+          <h2>
+            <span class="title-badge">BEST PRACTICE</span
+            >AI並列開発を成功させる4つのルール
+          </h2>
+        </div>
+        <div class="main-content">
+          <div class="left-panel">
+            <ul class="points-list">
+              <li>
+                <div class="point-title">
+                  人間側での「タスクの事前切り分け」
+                </div>
+                <div class="point-desc">
+                  Worktreeが防ぐのは「作業中」の衝突だけ。最終的にブランチを合流（マージ）する際、コンフリクトは起こり得ます。
+                </div>
+              </li>
+              <li>
+                <div class="point-title">コンフリクトを回避するタスク設計</div>
+                <div class="point-desc">
+                  AIに並列で作業を依頼する前に、人間がマージしやすさを考慮してタスク同士の結合度を下げておく必要があります。
+                </div>
+              </li>
+              <li>
+                <div class="point-title">ルールに沿った自律プロセスの制御</div>
+                <div class="point-desc">
+                  以下の4つのコツを理解し、AIエージェントのパフォーマンスと開発効率を最大限に引き出しましょう。
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div class="right-panel">
+            <div class="diagram-s5">
+              <div class="s5-card c1">
+                <span class="s5-card-num">01</span>
+                <div class="s5-card-title">📂 触るファイルで分ける</div>
+                <div class="s5-card-desc">
+                  「機能」単位ではなく「日本語と英語の翻訳ファイル」のように触る物理ファイルを完全に分ける。
+                </div>
+              </div>
+              <div class="s5-card c2">
+                <span class="s5-card-num">02</span>
+                <div class="s5-card-title">➡️ 依存関係は直列にする</div>
+                <div class="s5-card-desc">
+                  DBテーブル追加の後にAPI実装など、前提の必要な作業は並行せず順番に行う。
+                </div>
+              </div>
+              <div class="s5-card c3">
+                <span class="s5-card-num">03</span>
+                <div class="s5-card-title">🔒 ロックファイルの競合回避</div>
+                <div class="s5-card-desc">
+                  ライブラリ追加とUI修正を並行すると、package-lock.json等でマージ時に大衝突する。
+                </div>
+              </div>
+              <div class="s5-card c4">
+                <span class="s5-card-num">04</span>
+                <div class="s5-card-title">🧹 短期利用と片付け</div>
+                <div class="s5-card-desc">
+                  ワークツリーは長期間放置せず、マージが終わったら即座にコマンドで削除する。
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== SLIDE 6: SUMMARY ==================== -->
+      <div class="slide slide6 theme-yellow" id="slide6">
+        <div class="title-area">
+          <h2>
+            <span class="title-badge">SUMMARY</span>効率的なAI並列開発の鉄則
+          </h2>
+        </div>
+        <div class="main-content">
+          <div class="left-panel">
+            <ul class="points-list">
+              <li>
+                <div class="point-title">Git Worktreeの標準活用</div>
+                <div class="point-desc">
+                  1つのリポジトリをベースにして、異なるブランチを持つ独立した作業ディレクトリを軽量・高速に生成・管理します。
+                </div>
+              </li>
+              <li>
+                <div class="point-title">AIエージェントの作業競合の排除</div>
+                <div class="point-desc">
+                  各AIに個別のWorktreeディレクトリを割り当て、作業中のファイル上書き事故（排他制御の失敗）を防ぎます。
+                </div>
+              </li>
+              <li>
+                <div class="point-title">人間による適切なタスクの設計</div>
+                <div class="point-desc">
+                  物理的なファイル分け、依存関係の直列化、ロックファイルの考慮をあらかじめ人間が計画することで、マージまでスムーズに進めます。
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div class="right-panel">
+            <div class="diagram-s6">
+              <div class="s6-header">📋 スライドの重要まとめチェックリスト</div>
+              <div class="s6-items">
+                <div class="s6-item">
+                  <span class="s6-badge blue">Worktree</span>
+                  <span class="s6-item-text"
+                    >Git
+                    Worktreeを利用して、1リポジトリから複数の独立した作業ディレクトリを作る</span
+                  >
+                </div>
+                <div class="s6-item">
+                  <span class="s6-badge yellow">物理分離</span>
+                  <span class="s6-item-text"
+                    >各AIに異なるWorktreeを割り当てることで、ファイルの読み書き競合を防ぐ</span
+                  >
+                </div>
+                <div class="s6-item">
+                  <span class="s6-badge purple">タスク設計</span>
+                  <span class="s6-item-text"
+                    >マージのコンフリクトを防ぐため、物理的にタスクを分け、依存タスクは順に進める</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 共通ナビゲーションUI ==================== -->
+    <div class="nav-info">
+      <div class="slide-counter" id="counter">1 / 6</div>
+    </div>
+
+    <!-- JavaScript for Slideshow Control -->
+    <script>
+      let currentSlide = 1;
+      const totalSlides = 6;
+
+      function showSlide(slideNumber) {
+        // 現在のアクティブスライドを非表示
+        document.querySelectorAll('.slide').forEach((slide) => {
+          slide.classList.remove('active');
+        });
+
+        // 新しいスライドを表示
+        document.getElementById(`slide${slideNumber}`).classList.add('active');
+
+        // カウンターテキストの更新
+        const counterEl = document.getElementById('counter');
+        counterEl.innerText = `${slideNumber} / ${totalSlides}`;
+        currentSlide = slideNumber;
+      }
+
+      function nextSlide() {
+        if (currentSlide < totalSlides) {
+          showSlide(currentSlide + 1);
+        }
+      }
+
+      function prevSlide() {
+        if (currentSlide > 1) {
+          showSlide(currentSlide - 1);
+        }
+      }
+
+      function firstSlide() {
+        showSlide(1);
+      }
+
+      function lastSlide() {
+        showSlide(totalSlides);
+      }
+
+      document.addEventListener('keydown', function (event) {
+        // 入力中などの場合はイベントをスルー
+        if (
+          event.target.tagName === 'INPUT' ||
+          event.target.tagName === 'TEXTAREA'
+        ) {
+          return;
+        }
+
+        switch (event.key) {
+          case 'ArrowRight':
+          case ' ':
+            event.preventDefault();
+            nextSlide();
+            break;
+          case 'ArrowLeft':
+            event.preventDefault();
+            prevSlide();
+            break;
+          case 'Home':
+            event.preventDefault();
+            firstSlide();
+            break;
+          case 'End':
+            event.preventDefault();
+            lastSlide();
+            break;
+          case '1':
+          case '2':
+          case '3':
+          case '4':
+          case '5':
+          case '6':
+            event.preventDefault();
+            const slideNum = parseInt(event.key);
+            if (slideNum >= 1 && slideNum <= totalSlides) {
+              showSlide(slideNum);
+            }
+            break;
+        }
+      });
+
+      // 初期ロード時に1ページ目を表示
+      showSlide(1);
+    </script>
+  </body>
+</html>

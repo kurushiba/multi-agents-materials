@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>23-3-1 サブエージェントの品質を決める「2つのプロンプト」 - Udemy講座スライド</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CSS Reset & Variables --- */
+        :root {
+            --primary-color: #FFD600;    /* メイン黄色 */
+            --secondary-color: #25BAE9;  /* サブ青色 */
+            --text-black: #333333;       /* メインテキスト */
+            --background-gray: #EFF3F4;  /* 背景グレー */
+            --white: #FFFFFF;            /* 白背景 */
+            --text-gray: #555555;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --card-shadow: 0 8px 30px rgba(0,0,0,0.04);
+            --transition-speed: 0.4s;
+            --success-color: #22C55E;
+            --accent-purple: #8B5CF6;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #111111;
+            color: var(--text-black);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- 16:9 Aspect Ratio Slide Container --- */
+        .slide-container {
+            width: 90vw;
+            height: 50.625vw; /* 9/16 * 90vw */
+            max-width: 1600px;
+            max-height: 900px;
+            position: relative;
+            background-color: var(--white);
+            box-shadow: 0 25px 70px rgba(0,0,0,0.6);
+            border-radius: 12px;
+            overflow: hidden;
+            container-type: size;
+            container-name: slide;
+        }
+
+        /* Vertical viewport adjustments */
+        @media (max-aspect-ratio: 16/9) {
+            .slide-container {
+                width: 177.78vh; /* 16/9 * 90vh */
+                height: 90vh;
+            }
+        }
+
+        /* --- Individual Slide Wrapper --- */
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition-speed) cubic-bezier(0.25, 1, 0.5, 1);
+            background-color: var(--white);
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 2;
+        }
+
+        /* Theme Styling options */
+        .slide.theme-blue {
+            background-color: var(--white);
+        }
+
+        .slide.theme-yellow {
+            background-color: var(--background-gray);
+        }
+
+        /* --- Title Area (Header 15%) --- */
+        .title-area {
+            height: 15cqh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 4cqw;
+            position: relative;
+        }
+
+        .slide.theme-yellow .title-area {
+            background-color: var(--primary-color);
+        }
+
+        .slide.theme-blue .title-area {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .title-area h2 {
+            margin: 0;
+            font-size: 2.8cqw;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 1.5cqw;
+        }
+
+        .title-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05cqw;
+            font-weight: 800;
+            background-color: rgba(255, 255, 255, 0.35);
+            color: inherit;
+            padding: 0.4cqh 1.2cqw;
+            border-radius: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .slide.theme-yellow .title-badge {
+            background-color: rgba(0, 0, 0, 0.08);
+            color: var(--text-black);
+        }
+
+        /* --- Main Content Area --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            padding: 4cqh 4cqw 6cqh 4cqw;
+            gap: 4cqw;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 3cqh;
+        }
+
+        .right-panel {
+            width: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Bullet Points */
+        .points-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 3cqh;
+        }
+
+        .points-list li {
+            position: relative;
+            padding-left: 2.5cqw;
+        }
+
+        .points-list li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0.7cqh;
+            width: 1.2cqw;
+            height: 1.2cqw;
+            border-radius: 50%;
+        }
+
+        .slide.theme-yellow .points-list li::before {
+            background-color: var(--secondary-color);
+        }
+
+        .slide.theme-blue .points-list li::before {
+            background-color: var(--primary-color);
+        }
+
+        .point-title {
+            font-size: 1.45cqw;
+            font-weight: 700;
+            color: #111111;
+            margin-bottom: 0.6cqh;
+        }
+
+        .point-desc {
+            font-size: 1.05cqw;
+            color: var(--text-gray);
+            line-height: 1.55;
+            margin: 0;
+        }
+
+        /* --- Navigation Counter Floating (Standard Capsule Style) --- */
+        .nav-info {
+            position: absolute;
+            bottom: 20px;
+            left: 5%;
+            right: 5%;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            font-size: 0.95rem;
+            color: #888;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .slide-counter {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .slide.theme-blue .slide-counter {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .slide.theme-yellow .slide-counter {
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        /* ==========================================================================
+           SLIDE-SPECIFIC CUSTOM DIAGRAM STYLES
+           ========================================================================== */
+
+        /* --- Slide 1: Role Delegation & Two Prompts --- */
+        .diagram-s1 {
+            width: 95%;
+            height: 95%;
+            background: rgba(255,255,255,0.85);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+        .s1-box {
+            background: #ffffff;
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 1.5cqh 2cqw;
+            width: 85%;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            position: relative;
+        }
+        .s1-box.pm {
+            border-color: var(--secondary-color);
+            background: #f0fafd;
+        }
+        .s1-box.subagent {
+            border-color: var(--accent-purple);
+            background: #fdfaff;
+            width: 95%;
+        }
+        .s1-box-title {
+            font-size: 1.15cqw;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 0.5cqh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5cqw;
+        }
+        .s1-box-desc {
+            font-size: 0.85cqw;
+            color: var(--text-gray);
+        }
+        .s1-arrow {
+            font-size: 1.2cqw;
+            color: var(--secondary-color);
+            line-height: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-weight: 800;
+            margin: 0.5cqh 0;
+        }
+        .s1-arrow-text {
+            font-size: 0.75cqw;
+            color: #94a3b8;
+            margin-top: 0.2cqh;
+        }
+        .s1-prompts-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            gap: 1.5cqw;
+            margin-top: 0.5cqh;
+        }
+        .s1-prompt-card {
+            background: #ffffff;
+            border: 1.5px dashed #cbd5e1;
+            border-radius: 6px;
+            padding: 1.2cqh 1cqw;
+            width: 48%;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.01);
+        }
+        .s1-prompt-card.request {
+            border-color: var(--secondary-color);
+            background: #f0fafd;
+        }
+        .s1-prompt-card.system {
+            border-color: var(--primary-color);
+            background: #fffbeb;
+        }
+        .s1-prompt-tag {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.75cqw;
+            font-weight: 800;
+            padding: 0.2cqh 0.6cqw;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 0.5cqh;
+        }
+        .s1-prompt-card.request .s1-prompt-tag {
+            background: rgba(37, 186, 233, 0.15);
+            color: #0284c7;
+        }
+        .s1-prompt-card.system .s1-prompt-tag {
+            background: rgba(255, 214, 0, 0.25);
+            color: #854d0e;
+        }
+        .s1-prompt-title {
+            font-size: 0.9cqw;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .s1-prompt-desc {
+            font-size: 0.75cqw;
+            color: var(--text-gray);
+            margin-top: 0.2cqh;
+        }
+
+        /* --- Slide 2: Prompt Types --- */
+        .diagram-s2 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            height: 90%;
+            gap: 2cqw;
+        }
+        .s2-prompt-card {
+            width: 48%;
+            height: 100%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            text-align: center;
+        }
+        .s2-prompt-card.request {
+            border-top: 6px solid var(--secondary-color);
+        }
+        .s2-prompt-card.system {
+            border-top: 6px solid var(--primary-color);
+            background: #fafbfc;
+        }
+        .s2-card-header {
+            font-size: 1.3cqw;
+            font-weight: 800;
+            color: #1e293b;
+        }
+        .s2-type-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1cqw;
+            font-weight: 900;
+            padding: 0.4cqh 1cqw;
+            border-radius: 6px;
+            margin: 1.5cqh 0;
+            letter-spacing: 0.5px;
+        }
+        .s2-prompt-card.request .s2-type-badge {
+            background: #e0f2fe;
+            color: #0284c7;
+        }
+        .s2-prompt-card.system .s2-type-badge {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+        .s2-details {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2cqh;
+            text-align: left;
+        }
+        .s2-detail-item {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 0.8cqh 1cqw;
+            font-size: 0.85cqw;
+            display: flex;
+            align-items: center;
+            gap: 0.6cqw;
+            font-weight: 600;
+        }
+        .s2-detail-icon {
+            font-size: 1.1cqw;
+        }
+
+        /* --- Slide 3: Four Elements Grid --- */
+        .diagram-s3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            width: 95%;
+            height: 95%;
+            gap: 1.5cqw;
+        }
+        .s3-card {
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: var(--card-shadow);
+            padding: 2cqh 1.5cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+        .s3-card.c1 { border-left: 5px solid var(--secondary-color); }
+        .s3-card.c2 { border-left: 5px solid var(--accent-purple); }
+        .s3-card.c3 { border-left: 5px solid var(--primary-color); }
+        .s3-card.c4 { border-left: 5px solid #ef4444; }
+
+        .s3-card-title {
+            font-size: 1.15cqw;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 0.6cqh;
+            display: flex;
+            align-items: center;
+            gap: 0.5cqw;
+        }
+        .s3-card-desc {
+            font-size: 0.85cqw;
+            color: var(--text-gray);
+            line-height: 1.45;
+        }
+        .s3-card-num {
+            position: absolute;
+            top: 1.2cqh;
+            right: 1cqw;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3cqw;
+            font-weight: 900;
+            color: #cbd5e1;
+        }
+
+        /* --- Slide 4: Allocation Strategy --- */
+        .diagram-s4 {
+            width: 95%;
+            height: 95%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+        .s4-col {
+            width: 45%;
+            height: 100%;
+            border-radius: 8px;
+            padding: 2cqh 1.2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .s4-col.left-col {
+            background: #f0fafd;
+            border: 1.5px solid rgba(37, 186, 233, 0.3);
+        }
+        .s4-col.right-col {
+            background: #fffbeb;
+            border: 1.5px solid rgba(255, 214, 0, 0.4);
+        }
+        .s4-col-header {
+            text-align: center;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+            padding-bottom: 1cqh;
+            margin-bottom: 1.5cqh;
+        }
+        .s4-col-title {
+            font-size: 1.15cqw;
+            font-weight: 800;
+            color: #1e293b;
+        }
+        .s4-col-subtitle {
+            font-size: 0.8cqw;
+            color: var(--text-gray);
+            margin-top: 0.2cqh;
+        }
+        .s4-items {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            gap: 1cqh;
+        }
+        .s4-item {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 1cqh 1cqw;
+            font-size: 0.85cqw;
+            font-weight: 700;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            gap: 0.5cqw;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.01);
+        }
+        .s4-col.left-col .s4-item {
+            border-left: 4px solid var(--secondary-color);
+        }
+        .s4-col.right-col .s4-item {
+            border-left: 4px solid var(--primary-color);
+        }
+        .s4-center-arrow {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.8cqw;
+            color: #94a3b8;
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        /* --- Slide 5: Concrete Example (1 Column / Rows) --- */
+        .s5-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 2.5cqh 5cqw 4.5cqh 5cqw;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+        .s5-cards-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            height: 75%;
+            gap: 2.5cqw;
+        }
+        .s5-example-card {
+            width: 48%;
+            height: 100%;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 2.5cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: var(--card-shadow);
+        }
+        .s5-example-card.request {
+            border-top: 5px solid var(--secondary-color);
+            background: #f0fafd;
+        }
+        .s5-example-card.system {
+            border-top: 5px solid var(--primary-color);
+            background: #fffbeb;
+        }
+        .s5-card-title {
+            font-size: 1.25cqw;
+            font-weight: 800;
+            color: #1e293b;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+            padding-bottom: 0.8cqh;
+            margin-bottom: 1.5cqh;
+        }
+        .s5-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+        .s5-list li {
+            font-size: 0.95cqw;
+            line-height: 1.5;
+            color: var(--text-black);
+            padding-left: 1.5cqw;
+            position: relative;
+        }
+        .s5-list li::before {
+            content: "➔";
+            position: absolute;
+            left: 0;
+            color: #64748b;
+        }
+        .s5-example-card.request .s5-list li::before {
+            color: var(--secondary-color);
+        }
+        .s5-example-card.system .s5-list li::before {
+            color: #854d0e;
+        }
+        .s5-footer-note {
+            background: rgba(139, 92, 246, 0.08);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 8px;
+            padding: 1cqh 2cqw;
+            display: flex;
+            align-items: center;
+            gap: 1cqw;
+            width: 100%;
+        }
+        .s5-note-icon {
+            font-size: 1.4cqw;
+        }
+        .s5-note-text {
+            font-size: 1cqw;
+            color: #1e293b;
+            line-height: 1.45;
+        }
+
+        /* --- Slide 6: Summary Checklist --- */
+        .diagram-s6 {
+            width: 95%;
+            height: 90%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2.5cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .s6-header {
+            font-size: 1.15cqw;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.5cqw;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 1cqh;
+            color: #1e293b;
+        }
+        .s6-items {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2cqh;
+        }
+        .s6-item {
+            display: flex;
+            align-items: center;
+            gap: 1cqw;
+            background: #f8fafc;
+            padding: 1.2cqh 1.2cqw;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            border-left: 5px solid var(--success-color);
+        }
+        .s6-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.8cqw;
+            font-weight: 800;
+            padding: 0.2cqh 0.6cqw;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        .s6-badge.blue {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+        .s6-badge.yellow {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+        .s6-badge.purple {
+            background: #f3e8ff;
+            color: #6b21a8;
+        }
+        .s6-item-text {
+            font-size: 0.9cqw;
+            font-weight: 600;
+            color: var(--text-black);
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="slide-container">
+
+        <!-- ==================== SLIDE 1: TWO PROMPTS ==================== -->
+        <div class="slide slide1 active theme-yellow" id="slide1">
+            <div class="title-area">
+                <h2><span class="title-badge">TWO PROMPTS</span>サブエージェントの品質を決める「2つのプロンプト」</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">「記憶のない専門家」としての起動</div>
+                            <div class="point-desc">サブエージェントは毎回、過去のやり取りや試行錯誤を一切共有されず、完全に独立したまっさらな作業スペースで起動します。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">情報の完結性という大前提</div>
+                            <div class="point-desc">会話履歴がないため、タスクを完遂するのに必要な情報は、手渡されたテキスト情報のみに漏れなく備わっている必要があります。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">2つのプロンプトの掛け合わせ</div>
+                            <div class="point-desc">メインAIがその場で組み立てる「依頼プロンプト」と、あらかじめ定義された「システムプロンプト」の2つが動作品質を決定します。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s1">
+                        <div class="s1-box pm">
+                            <div class="s1-box-title">🧠 メインAI (PM)</div>
+                            <div class="s1-box-desc">会話の文脈や依頼内容を把握し、タスクを切り出す</div>
+                        </div>
+                        <div class="s1-arrow">
+                            ⬇️ 
+                            <span class="s1-arrow-text">実行のたびに手渡す</span>
+                        </div>
+                        <div class="s1-prompts-container">
+                            <div class="s1-prompt-card request">
+                                <span class="s1-prompt-tag">DYNAMIC</span>
+                                <div class="s1-prompt-title">✉️ 依頼プロンプト</div>
+                                <div class="s1-prompt-desc">メインAIがその場で生成</div>
+                            </div>
+                            <div class="s1-prompt-card system">
+                                <span class="s1-prompt-tag">STATIC</span>
+                                <div class="s1-prompt-title">⚙️ システムプロンプト</div>
+                                <div class="s1-prompt-desc">定義ファイルから自動読込</div>
+                            </div>
+                        </div>
+                        <div class="s1-arrow" style="margin-top: 0.5cqh;">
+                            ⬇️
+                        </div>
+                        <div class="s1-box subagent">
+                            <div class="s1-box-title">🤖 サブエージェント (専門家)</div>
+                            <div class="s1-box-desc">2つのプロンプトのみを頼りにタスクを実行・完遂する</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 2: PROMPT TYPES ==================== -->
+        <div class="slide slide2 theme-blue" id="slide2">
+            <div class="title-area">
+                <h2><span class="title-badge">PROMPT TYPES</span>依頼プロンプトとシステムプロンプトの役割</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">「動的」な依頼プロンプト</div>
+                            <div class="point-desc">実行ごとにメインAIがその場で組み立てる可変テキスト。タスクの具体的な中身（目的）が指定されます。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">「静的」なシステムプロンプト</div>
+                            <div class="point-desc">サブエージェント定義ファイルから読み込まれる固定テキスト。タスクが変わっても常に同じルールを提供します。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">2つのテキストによる自律稼働</div>
+                            <div class="point-desc">履歴が共有されない制約の下で、「その場限りの命令」と「恒久的な前提ルール」をかけ合わせて正しく稼働します。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s2">
+                        <div class="s2-prompt-card request">
+                            <div class="s2-card-header">✉️ 依頼プロンプト</div>
+                            <span class="s2-type-badge">DYNAMIC</span>
+                            <div class="s2-details">
+                                <div class="s2-detail-item">
+                                    <span class="s2-detail-icon">⚡</span> 毎回その場で組み立てる
+                                </div>
+                                <div class="s2-detail-item">
+                                    <span class="s2-detail-icon">🎯</span> ターゲットが変わる (目的)
+                                </div>
+                            </div>
+                        </div>
+                        <div class="s2-prompt-card system">
+                            <div class="s2-card-header">🔒 システムプロンプト</div>
+                            <span class="s2-type-badge">STATIC</span>
+                            <div class="s2-details">
+                                <div class="s2-detail-item">
+                                    <span class="s2-detail-icon">📁</span> 定義ファイルから自動読込
+                                </div>
+                                <div class="s2-detail-item">
+                                    <span class="s2-detail-icon">🛡️</span> 常に変わらない共通の約束事
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 3: FOUR ELEMENTS ==================== -->
+        <div class="slide slide3 theme-blue" id="slide3">
+            <div class="title-area">
+                <h2><span class="title-badge">FOUR ELEMENTS</span>指示に必要な4つの構成要素</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">Anthropicのベストプラクティス</div>
+                            <div class="point-desc">本番環境での検証に基づき、エージェントへの「指示（プロンプト全体）」に含めるべき4つの重要要素を定めています。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">自立的な完了判断の実現</div>
+                            <div class="point-desc">4要素を揃えることで、エージェントは「いつタスクが完了したか」を正確に自分で評価・判断できるようになります。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">スコープ逸脱の完全防止</div>
+                            <div class="point-desc">1つでも欠けると、エージェントは目的からそれ始め、無駄な試行やトークンの過剰消費を引き起こしてしまいます。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s3">
+                        <div class="s3-card c1">
+                            <span class="s3-card-num">01</span>
+                            <div class="s3-card-title">🎯 目的 (Objective)</div>
+                            <div class="s3-card-desc">何を達成すればよいか、測定・検証可能な完了条件を示す。</div>
+                        </div>
+                        <div class="s3-card c2">
+                            <span class="s3-card-num">02</span>
+                            <div class="s3-card-title">📋 出力フォーマット (Format)</div>
+                            <div class="s3-card-desc">メインAIがパースしてそのまま自動で使える構造を指定する。</div>
+                        </div>
+                        <div class="s3-card c3">
+                            <span class="s3-card-num">03</span>
+                            <div class="s3-card-title">🛠️ ツール・情報源 (Tools)</div>
+                            <div class="s3-card-desc">参照すべきファイルパスや使用してよいコマンドのガイダンス。</div>
+                        </div>
+                        <div class="s3-card c4">
+                            <span class="s3-card-num">04</span>
+                            <div class="s3-card-title">⛔ タスクの境界 (Boundary)</div>
+                            <div class="s3-card-desc">「何をしてはいけないか」という明確な否定の制約事項。</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 4: ALLOCATION ==================== -->
+        <div class="slide slide4 theme-blue" id="slide4">
+            <div class="title-area">
+                <h2><span class="title-badge">ALLOCATION</span>4要素のプロンプト振り分け戦略</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">「可変か」「共通か」で切り分ける</div>
+                            <div class="point-desc">4つの要素は、タスクごとに変化するもの（動的）と、タスクが異なっても変化しない共通ルール（静的）に分類できます。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">目的は「依頼プロンプト」へ</div>
+                            <div class="point-desc">「何を達成するか（目的）」は毎回変わるため、メインAIからそのつど手渡す依頼プロンプトの役割と一致します。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">残り3つは「システムプロンプト」へ</div>
+                            <div class="point-desc">出力の形式・ツール・禁止事項は毎回変わらないため、定義ファイル側にルールとして恒久化しておくのが理にかなっています。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s4">
+                        <div class="s4-col left-col">
+                            <div class="s4-col-header">
+                                <div class="s4-col-title">✉️ 依頼プロンプト</div>
+                                <div class="s4-col-subtitle">動的 (可変)</div>
+                            </div>
+                            <div class="s4-items">
+                                <div class="s4-item">🎯 01. 目的 (Objective)</div>
+                            </div>
+                        </div>
+                        <div class="s4-center-arrow">➔</div>
+                        <div class="s4-col right-col">
+                            <div class="s4-col-header">
+                                <div class="s4-col-title">🔒 システムプロンプト</div>
+                                <div class="s4-col-subtitle">静的 (不変)</div>
+                            </div>
+                            <div class="s4-items">
+                                <div class="s4-item">📋 02. 出力フォーマット</div>
+                                <div class="s4-item">🛠️ 03. ツール・情報源</div>
+                                <div class="s4-item">⛔ 04. タスクの境界</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 5: CONCRETE EXAMPLE ==================== -->
+        <div class="slide slide5 theme-blue" id="slide5">
+            <div class="title-area">
+                <h2><span class="title-badge">CONCRETE EXAMPLE</span>コードレビュー・エージェントでの適用例</h2>
+            </div>
+            <div class="s5-main">
+                <div class="s5-cards-container">
+                    <div class="s5-example-card request">
+                        <div class="s5-card-title">✉️ 依頼プロンプト (毎回変わる)</div>
+                        <ul class="s5-list">
+                            <li><strong>本日のタスク:</strong> 「認証まわりの実装コードをレビューせよ」</li>
+                            <li><strong>明日のタスク:</strong> 「決済処理のコードをレビューせよ」</li>
+                            <li>➔ 対象とする「目的」のみを動的に組み立てて渡す</li>
+                        </ul>
+                    </div>
+                    <div class="s5-example-card system">
+                        <div class="s5-card-title">🔒 システムプロンプト (共通ルール)</div>
+                        <ul class="s5-list">
+                            <li><strong>出力:</strong> レビュー結果は必ず指定のMarkdownスキーマで返す</li>
+                            <li><strong>ツール:</strong> ReadとGrepのみを使い、コードの書き換えは行わない</li>
+                            <li><strong>境界:</strong> バグ指摘は行うが、修正コード自体の作成はしない</li>
+                        </ul>
+                    </div>
+                </div>
+                <!-- 補足エリア -->
+                <div class="s5-footer-note">
+                    <span class="s5-note-icon">💡</span>
+                    <div class="s5-note-text">
+                        <strong>分離による効率化:</strong> 毎回変わらない共通の約束事をシステムプロンプトに任せることで、メインAIがその場で組み立てる依頼プロンプトは「今回の目的」を伝えるだけで済むようになり、記述ミスを減らしトークンを節約できます。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 6: SUMMARY ==================== -->
+        <div class="slide slide6 theme-yellow" id="slide6">
+            <div class="title-area">
+                <h2><span class="title-badge">SUMMARY</span>2つのプロンプトを使いこなす鉄則</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">役割の明確な手分けと分離</div>
+                            <div class="point-desc">可変の「目的」は依頼プロンプトで、共通ルールの「フォーマット」「ツール」「境界」はシステムプロンプトで記述します。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">一発完遂を可能にする4要素の充足</div>
+                            <div class="point-desc">4つの要素が漏れなく揃うことで、記憶のないサブエージェントが一発で的確な成果を返せる状態を構築します。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">低トークン・高精度な運用の実現</div>
+                            <div class="point-desc">指示の重複や無駄なやり取りを徹底的に排除し、マルチエージェントシステムの動作効率と品質を極限まで高めます。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s6">
+                        <div class="s6-header">
+                            📋 スライドの重要まとめチェックリスト
+                        </div>
+                        <div class="s6-items">
+                            <div class="s6-item">
+                                <span class="s6-badge blue">可変指示</span>
+                                <span class="s6-item-text">目的は「依頼プロンプト」を用いて呼び出しのたびに動的に切り替える</span>
+                            </div>
+                            <div class="s6-item">
+                                <span class="s6-badge yellow">前提ルール</span>
+                                <span class="s6-item-text">出力・ツール・境界は「システムプロンプト」として定義ファイルに固定する</span>
+                            </div>
+                            <div class="s6-item">
+                                <span class="s6-badge purple">一発完遂</span>
+                                <span class="s6-item-text">4要素すべてが漏れなく伝わる設計を意識し、AIの迷走とトークン浪費を防ぐ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ==================== 共通ナビゲーションUI ==================== -->
+    <div class="nav-info">
+        <div class="slide-counter" id="counter">1 / 6</div>
+    </div>
+
+    <!-- JavaScript for Slideshow Control -->
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 6;
+
+        function showSlide(slideNumber) {
+            // 現在のアクティブスライドを非表示
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+
+            // 新しいスライドを表示
+            document.getElementById(`slide${slideNumber}`).classList.add('active');
+            
+            // カウンターテキストの更新
+            const counterEl = document.getElementById('counter');
+            counterEl.innerText = `${slideNumber} / ${totalSlides}`;
+            currentSlide = slideNumber;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        function firstSlide() {
+            showSlide(1);
+        }
+
+        function lastSlide() {
+            showSlide(totalSlides);
+        }
+
+        document.addEventListener('keydown', function(event) {
+            // 入力中などの場合はイベントをスルー
+            if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            switch(event.key) {
+                case 'ArrowRight':
+                case ' ':
+                    event.preventDefault();
+                    nextSlide();
+                    break;
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    prevSlide();
+                    break;
+                case 'Home':
+                    event.preventDefault();
+                    firstSlide();
+                    break;
+                case 'End':
+                    event.preventDefault();
+                    lastSlide();
+                    break;
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                    event.preventDefault();
+                    const slideNum = parseInt(event.key);
+                    if (slideNum >= 1 && slideNum <= totalSlides) {
+                        showSlide(slideNum);
+                    }
+                    break;
+            }
+        });
+
+        // 初期ロード時に1ページ目を表示
+        showSlide(1);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2-5 サブエージェントの権限設計 - Udemy講座スライド</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CSS Reset & Variables --- */
+        :root {
+            --primary-color: #FFD600;    /* メイン黄色 */
+            --secondary-color: #25BAE9;  /* サブ青色 */
+            --text-black: #333333;       /* メインテキスト */
+            --background-gray: #EFF3F4;  /* 背景グレー */
+            --white: #FFFFFF;            /* 白背景・テキスト */
+            --text-gray: #555555;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --card-shadow: 0 8px 30px rgba(0,0,0,0.04);
+            --transition-speed: 0.4s;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #111111;
+            color: var(--text-black);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* --- 16:9 Aspect Ratio Slide Container --- */
+        .slide-container {
+            width: 90vw;
+            height: 50.625vw; /* 9/16 * 90vw */
+            max-width: 1600px;
+            max-height: 900px;
+            position: relative;
+            background-color: var(--white);
+            box-shadow: 0 25px 70px rgba(0,0,0,0.6);
+            border-radius: 12px;
+            overflow: hidden;
+            container-type: size;
+            container-name: slide;
+        }
+
+        /* Vertical viewport adjustments */
+        @media (max-aspect-ratio: 16/9) {
+            .slide-container {
+                width: 177.78vh; /* 16/9 * 90vh */
+                height: 90vh;
+            }
+        }
+
+        /* --- Individual Slide Wrapper --- */
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition-speed) cubic-bezier(0.25, 1, 0.5, 1);
+            background-color: var(--white);
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 2;
+        }
+
+        /* Theme Styling options */
+        .slide.theme-blue {
+            background-color: var(--white);
+        }
+
+        .slide.theme-yellow {
+            background-color: var(--background-gray);
+        }
+
+        /* --- Title Area (Header 15%) --- */
+        .title-area {
+            height: 15cqh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 4cqw;
+            position: relative;
+        }
+
+        .slide.theme-yellow .title-area {
+            background-color: var(--primary-color);
+        }
+
+        .slide.theme-blue .title-area {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .title-area h2 {
+            margin: 0;
+            font-size: 2.8cqw;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 1.5cqw;
+        }
+
+        .title-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05cqw;
+            font-weight: 800;
+            background-color: rgba(255, 255, 255, 0.35);
+            color: inherit;
+            padding: 0.4cqh 1.2cqw;
+            border-radius: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .slide.theme-yellow .title-badge {
+            background-color: rgba(0, 0, 0, 0.08);
+            color: var(--text-black);
+        }
+
+        /* --- Main Content Area --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            padding: 4cqh 4cqw 6cqh 4cqw;
+            gap: 4cqw;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 3cqh;
+        }
+
+        .right-panel {
+            width: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Bullet Points */
+        .points-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 3cqh;
+        }
+
+        .points-list li {
+            position: relative;
+            padding-left: 2.5cqw;
+        }
+
+        .points-list li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0.7cqh;
+            width: 1.2cqw;
+            height: 1.2cqw;
+            border-radius: 50%;
+        }
+
+        .slide.theme-yellow .points-list li::before {
+            background-color: var(--secondary-color);
+        }
+
+        .slide.theme-blue .points-list li::before {
+            background-color: var(--primary-color);
+        }
+
+        .point-title {
+            font-size: 1.45cqw;
+            font-weight: 700;
+            color: #111111;
+            margin-bottom: 0.6cqh;
+        }
+
+        .point-desc {
+            font-size: 1.05cqw;
+            color: var(--text-gray);
+            line-height: 1.55;
+            margin: 0;
+        }
+
+        /* --- Navigation Counter Floating (Standard Capsule Style) --- */
+        .nav-info {
+            position: absolute;
+            bottom: 20px;
+            left: 5%;
+            right: 5%;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            font-size: 0.95rem;
+            color: #888;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .slide-counter {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .slide.theme-blue .slide-counter {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .slide.theme-yellow .slide-counter {
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        /* ==========================================================================
+           SLIDE-SPECIFIC CUSTOM DIAGRAM STYLES
+           ========================================================================== */
+
+        /* --- Slide 1: Three Keys Diagram --- */
+        .diagram-s1 {
+            width: 95%;
+            height: 85%;
+            background: rgba(255,255,255,0.85);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2.5cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .s1-yaml-card {
+            background: #1e1e1e; /* VS Code風ダーク背景 */
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Outfit', 'Fira Code', 'Courier New', Courier, monospace;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .s1-yaml-header {
+            background: #2d2d2d;
+            height: 4cqh;
+            padding: 0 1.2cqw;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #252526;
+        }
+        .s1-yaml-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        .s1-yaml-btn {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .s1-yaml-btn.red { background: #ff5f56; }
+        .s1-yaml-btn.yellow { background: #ffbd2e; }
+        .s1-yaml-btn.green { background: #27c93f; }
+        .s1-yaml-title {
+            color: #858585;
+            font-size: 0.85cqw;
+            font-weight: 500;
+        }
+        .s1-yaml-content {
+            padding: 1.5cqh 1.8cqw;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6cqh;
+            line-height: 1.5;
+        }
+        .s1-code-line {
+            display: flex;
+            font-size: 1cqw;
+            white-space: pre-wrap;
+            position: relative;
+        }
+        .yaml-dash { color: #6a9955; font-weight: bold; } /* YAMLデリミタ: 緑 */
+        .yaml-key { color: #9cdcfe; font-weight: 600; } /* キー：水色 */
+        .yaml-colon { color: #d4d4d4; margin-right: 0.5cqw; }
+        .yaml-val-str { color: #ce9178; word-break: break-all; } /* 値：オレンジ・茶色 */
+        .yaml-val-bracket { color: #ffd700; } /* ブラケット */
+        .yaml-val-constant { color: #4fc1ff; } /* 定数(defaultなど) */
+        .s1-keys-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5cqh;
+            margin-top: 1cqh;
+        }
+        .s1-key-item {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 1cqh 1.2cqw;
+            display: flex;
+            align-items: center;
+            gap: 1cqw;
+        }
+        .s1-key-icon {
+            font-size: 1.5cqw;
+            background: #edf2f7;
+            padding: 0.5cqh 0.6cqw;
+            border-radius: 6px;
+        }
+        .s1-key-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .s1-key-name {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1cqw;
+            font-weight: 800;
+            color: #1a202c;
+        }
+        .s1-key-desc {
+            font-size: 0.8cqw;
+            color: var(--text-gray);
+        }
+
+        /* --- Slide 2: Comparison (Omitted vs List) --- */
+        .diagram-s2 {
+            display: flex;
+            justify-content: space-between;
+            align-items: stretch;
+            width: 100%;
+            height: auto;
+            flex: 1;
+            gap: 2cqw;
+        }
+        .s2-compare-card {
+            width: 48%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 1.2cqh 1cqw;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5cqh;
+        }
+        .s2-compare-card.bad {
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+        .s2-compare-card.good {
+            border-color: rgba(34, 197, 94, 0.2);
+        }
+        .s2-card-header {
+            font-size: 1.05cqw;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.5cqw;
+        }
+        .s2-compare-card.bad .s2-card-header { color: #ef4444; }
+        .s2-compare-card.good .s2-card-header { color: #22c55e; }
+        
+        .s2-status-icon {
+            font-size: 2cqw;
+            margin: 0.2cqh 0;
+            line-height: 1;
+        }
+        .s2-permissions-list {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5cqh;
+        }
+        .s2-perm-item {
+            background: #f8fafc;
+            border-radius: 6px;
+            padding: 0.5cqh 0.8cqw;
+            font-size: 0.75cqw;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Outfit', 'Noto Sans JP', sans-serif;
+            font-weight: 600;
+        }
+        .s2-perm-item.allowed {
+            border-left: 4px solid #22c55e;
+            color: #166534;
+        }
+        .s2-perm-item.blocked {
+            border-left: 4px solid #ef4444;
+            color: #991b1b;
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        .s2-badge-danger {
+            background: #fef2f2;
+            color: #ef4444;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7cqw;
+        }
+        .s2-badge-safe {
+            background: #f0fdf4;
+            color: #22c55e;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7cqw;
+        }
+
+        /* --- Slide 3: Nesting Levels --- */
+        .diagram-s3 {
+            width: 100%;
+            height: auto;
+            flex: 1;
+            background: #f8fafc;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 2cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .s3-tree-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8cqh;
+            margin-top: 0.5cqh;
+        }
+        .s3-level {
+            display: flex;
+            align-items: center;
+            gap: 1.5cqw;
+        }
+        .s3-level-num {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.85cqw;
+            font-weight: 800;
+            color: #94a3b8;
+            width: 6cqw;
+        }
+        .s3-agent-node {
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 0.8cqh 1.2cqw;
+            font-size: 0.85cqw;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5cqw;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            flex: 1;
+        }
+        .s3-agent-node.root {
+            border: 2px solid var(--secondary-color);
+            background: #f0fafd;
+        }
+        .s3-agent-node.limit {
+            border: 2px dashed #ef4444;
+            background: #fef2f2;
+            color: #ef4444;
+        }
+        .s3-arrow-down {
+            align-self: center;
+            font-size: 0.9cqw;
+            color: var(--secondary-color);
+            margin-left: 7cqw;
+            line-height: 1;
+        }
+        .s3-limit-tag {
+            font-size: 0.7cqw;
+            background: #ef4444;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        /* --- Slide 4: Filter Flow --- */
+        .diagram-s4 {
+            width: 100%;
+            height: auto;
+            flex: 1;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 2cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+        .s4-flow-step {
+            display: flex;
+            align-items: center;
+            gap: 1.5cqw;
+        }
+        .s4-step-num {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3cqw;
+            font-weight: 900;
+            color: #cbd5e1;
+        }
+        .s4-step-content {
+            flex: 1;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 1cqh 1.2cqw;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .s4-step-content.active-deny {
+            border-left: 5px solid #ef4444;
+            background: #fff5f5;
+        }
+        .s4-step-content.active-allow {
+            border-left: 5px solid #22c55e;
+            background: #f0fdf4;
+        }
+        .s4-step-label {
+            font-size: 0.85cqw;
+            font-weight: 700;
+        }
+        .s4-step-details {
+            font-size: 0.75cqw;
+            color: var(--text-gray);
+            font-family: 'Outfit', 'Noto Sans JP', sans-serif;
+        }
+        .s4-flow-arrow {
+            text-align: center;
+            font-size: 1cqw;
+            color: #94a3b8;
+            margin-left: 3.5cqw;
+        }
+
+        /* --- Reusable YAML Card & Layouts --- */
+        .right-panel-column {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            gap: 2cqh;
+        }
+
+        .yaml-card {
+            background: #1e1e1e; /* VS Code風ダーク背景 */
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Outfit', 'Fira Code', 'Courier New', Courier, monospace;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            width: 100%;
+        }
+        .yaml-header {
+            background: #2d2d2d;
+            height: 4cqh;
+            padding: 0 1.2cqw;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #252526;
+        }
+        .yaml-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        .yaml-btn {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .yaml-btn.red { background: #ff5f56; }
+        .yaml-btn.yellow { background: #ffbd2e; }
+        .yaml-btn.green { background: #27c93f; }
+        .yaml-title {
+            color: #858585;
+            font-size: 0.85cqw;
+            font-weight: 500;
+        }
+        .yaml-content {
+            padding: 1.2cqh 1.8cqw;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4cqh;
+            line-height: 1.4;
+        }
+        .code-line {
+            display: flex;
+            font-size: 1.05cqw;
+            white-space: pre-wrap;
+            position: relative;
+        }
+        .yaml-dash { color: #6a9955; font-weight: bold; } /* YAMLデリミタ: 緑 */
+        .yaml-key { color: #9cdcfe; font-weight: 600; } /* キー：水色 */
+        .yaml-colon { color: #d4d4d4; margin-right: 0.5cqw; }
+        .yaml-val-str { color: #ce9178; word-break: break-all; } /* 値：オレンジ・茶色 */
+        .yaml-val-bracket { color: #ffd700; } /* ブラケット */
+        .yaml-val-constant { color: #4fc1ff; } /* 定数(defaultなど) */
+
+        /* --- Slide 5: Permission Modes Grid --- */
+        .diagram-s5 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2cqw;
+            width: 100%;
+            height: 90%;
+        }
+        .s5-mode-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2cqh 1.8cqw;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            border-top: 4px solid var(--secondary-color);
+        }
+        .s5-mode-card.danger {
+            border-top-color: #ef4444;
+            background: #fff5f5;
+        }
+        .s5-mode-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Outfit', 'Noto Sans JP', sans-serif;
+            font-weight: 800;
+            font-size: 1.1cqw;
+            margin-bottom: 0.5cqh;
+        }
+        .s5-mode-badge {
+            font-size: 0.75cqw;
+            padding: 2px 8px;
+            border-radius: 12px;
+            text-transform: uppercase;
+        }
+        .s5-mode-badge.yellow { background: #fef3c7; color: #d97706; }
+        .s5-mode-badge.green { background: #dcfce7; color: #15803d; }
+        .s5-mode-badge.red { background: #fee2e2; color: #b91c1c; }
+        .s5-mode-desc {
+            font-size: 0.85cqw;
+            color: var(--text-gray);
+            line-height: 1.4;
+            margin: 0;
+        }
+
+        /* --- Slide 6: Summary Checklist --- */
+        .diagram-s6 {
+            width: 95%;
+            height: 90%;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 3cqh 2cqw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+        .s6-checklist-header {
+            font-size: 1.2cqw;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.5cqw;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 1cqh;
+        }
+        .s6-checklist-items {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5cqh;
+        }
+        .s6-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1cqw;
+            background: #f8fafc;
+            padding: 1.2cqh 1.2cqw;
+            border-radius: 8px;
+        }
+        .s6-check-icon {
+            font-size: 1.2cqw;
+            color: #22c55e;
+            line-height: 1;
+        }
+        .s6-item-text {
+            font-size: 0.9cqw;
+            font-weight: 600;
+            color: var(--text-black);
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="slide-container">
+
+        <!-- ==================== SLIDE 1: OVERVIEW ==================== -->
+        <div class="slide slide1 active theme-yellow" id="slide1">
+            <div class="title-area">
+                <h2><span class="title-badge">SECURITY</span>サブエージェントの権限設計</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">開発権限の適正管理</div>
+                            <div class="point-desc">自律的に動くエージェントにローカルの操作権限をどこまで渡すかという、安全性と利便性のバランス設計です。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">誤操作やファイル破壊の防止</div>
+                            <div class="point-desc">AIの自律動作による意図しないファイルの書き換えや、予期せぬシェルコマンドの実行を未然に防ぎます。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">フロントマターによる3大制御</div>
+                            <div class="point-desc">YAMLフロントマターに用意された `tools`、`disallowedTools`、`permissionMode` を組み合わせて設計します。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s1">
+                        <div class="s1-yaml-card">
+                            <div class="s1-yaml-header">
+                                <div class="s1-yaml-buttons">
+                                    <span class="s1-yaml-btn red"></span>
+                                    <span class="s1-yaml-btn yellow"></span>
+                                    <span class="s1-yaml-btn green"></span>
+                                </div>
+                                <div class="s1-yaml-title">read-only-agent.md</div>
+                                <div style="width: 32px;"></div>
+                            </div>
+                            <div class="s1-yaml-content">
+                                <div class="s1-code-line"><span class="yaml-dash">---</span></div>
+                                <div class="s1-code-line">
+                                    <span class="yaml-key">tools</span><span class="yaml-colon">:</span>
+                                    <span class="yaml-val-bracket">[</span><span class="yaml-val-str">Read</span><span class="yaml-colon">,</span> <span class="yaml-val-str">Grep</span><span class="yaml-val-bracket">]</span>
+                                </div>
+                                <div class="s1-code-line">
+                                    <span class="yaml-key">disallowedTools</span><span class="yaml-colon">:</span>
+                                    <span class="yaml-val-bracket">[</span><span class="yaml-val-str">Bash</span><span class="yaml-val-bracket">]</span>
+                                </div>
+                                <div class="s1-code-line">
+                                    <span class="yaml-key">permissionMode</span><span class="yaml-colon">:</span>
+                                    <span class="yaml-val-constant">default</span>
+                                </div>
+                                <div class="s1-code-line"><span class="yaml-dash">---</span></div>
+                            </div>
+                        </div>
+                        <div class="s1-keys-container">
+                            <div class="s1-key-item">
+                                <span class="s1-key-icon">🔑</span>
+                                <div class="s1-key-info">
+                                    <div class="s1-key-name">tools</div>
+                                    <div class="s1-key-desc">使用可能なツールを許可する（ホワイトリスト）</div>
+                                </div>
+                            </div>
+                            <div class="s1-key-item">
+                                <span class="s1-key-icon">🚫</span>
+                                <div class="s1-key-info">
+                                    <div class="s1-key-name">disallowedTools</div>
+                                    <div class="s1-key-desc">特定の危険な操作を禁止する（ブラックリスト）</div>
+                                </div>
+                            </div>
+                            <div class="s1-key-item">
+                                <span class="s1-key-icon">🛡️</span>
+                                <div class="s1-key-info">
+                                    <div class="s1-key-name">permissionMode</div>
+                                    <div class="s1-key-desc">ツール実行時のユーザー承認ルールを制御する</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 2: TOOLS (WHITE LIST) ==================== -->
+        <div class="slide slide2 theme-blue" id="slide2">
+            <div class="title-area">
+                <h2><span class="title-badge">TOOLS</span>ホワイトリスト方式による権限の制限</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">ツール指定省略時のリスク</div>
+                            <div class="point-desc">`tools` を省略すると、親セッションの全ツール権限（Edit, Write, Bash, MCPなど）を無条件ですべて継承してしまいます。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">ホワイトリスト方式による制限</div>
+                            <div class="point-desc">調査専用なら `tools: [Read, Grep, Glob]` のように、タスクの遂行に必要最小限のツールだけを明示的に指定します。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">安全性の最大化</div>
+                            <div class="point-desc">万が一AIが誤った推論をした場合でも、権限を制限していれば意図しないファイル書き換えやコマンド実行を防げます。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel right-panel-column">
+                    <div class="yaml-card">
+                        <div class="yaml-header">
+                            <div class="yaml-buttons">
+                                <span class="yaml-btn red"></span>
+                                <span class="yaml-btn yellow"></span>
+                                <span class="yaml-btn green"></span>
+                            </div>
+                            <div class="yaml-title">subagent.md</div>
+                            <div style="width: 32px;"></div>
+                        </div>
+                        <div class="yaml-content">
+                            <div class="code-line"><span class="yaml-dash">---</span></div>
+                            <div class="code-line">
+                                <span class="yaml-key">tools</span><span class="yaml-colon">:</span>
+                                <span class="yaml-val-bracket">[</span><span class="yaml-val-str">Read</span><span class="yaml-colon">,</span> <span class="yaml-val-str">Grep</span><span class="yaml-colon">,</span> <span class="yaml-val-str">Glob</span><span class="yaml-val-bracket">]</span>
+                            </div>
+                            <div class="code-line"><span class="yaml-dash">---</span></div>
+                        </div>
+                    </div>
+                    <div class="diagram-s2">
+                        <div class="s2-compare-card bad">
+                            <div class="s2-card-header">
+                                ❌ 指定なし (省略)
+                            </div>
+                            <div class="s2-status-icon">⚠️</div>
+                            <div class="s2-permissions-list">
+                                <div class="s2-perm-item allowed">Read / Grep <span class="s2-badge-safe">OK</span></div>
+                                <div class="s2-perm-item allowed">Edit / Write <span class="s2-badge-danger">継承</span></div>
+                                <div class="s2-perm-item allowed">Bash (コマンド実行) <span class="s2-badge-danger">危険</span></div>
+                            </div>
+                        </div>
+                        <div class="s2-compare-card good">
+                            <div class="s2-card-header">
+                                🟢 ホワイトリスト指定
+                            </div>
+                            <div class="s2-status-icon">🛡️</div>
+                            <div class="s2-permissions-list">
+                                <div class="s2-perm-item allowed">Read / Grep <span class="s2-badge-safe">OK</span></div>
+                                <div class="s2-perm-item blocked">Edit / Write <span class="s2-badge-danger">不可</span></div>
+                                <div class="s2-perm-item blocked">Bash (コマンド実行) <span class="s2-badge-danger">不可</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 3: NESTING CONTROLS ==================== -->
+        <div class="slide slide3 theme-blue" id="slide3">
+            <div class="title-area">
+                <h2><span class="title-badge">TOOLS</span>サブエージェントのネスト制御と制限</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">「Agent」ツールの追加</div>
+                            <div class="point-desc">`tools` フィールドに `Agent` を含めることで、そのエージェント自身がさらに別のサブエージェントを自律起動できるようになります。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">ネスト呼び出しの禁止</div>
+                            <div class="point-desc">`Agent` を指定しなければ、親セッション以外への別エージェント呼び出しを完全に制限・ブロックできます。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">最大「5階層」までの上限ルール</div>
+                            <div class="point-desc">意図しない呼び出しの無限ループやコストの急増を防ぐため、ネスト呼び出しの階層は最大5階層までに制限されています。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel right-panel-column">
+                    <div class="yaml-card">
+                        <div class="yaml-header">
+                            <div class="yaml-buttons">
+                                <span class="yaml-btn red"></span>
+                                <span class="yaml-btn yellow"></span>
+                                <span class="yaml-btn green"></span>
+                            </div>
+                            <div class="yaml-title">nesting-agent.md</div>
+                            <div style="width: 32px;"></div>
+                        </div>
+                        <div class="yaml-content">
+                            <div class="code-line"><span class="yaml-dash">---</span></div>
+                            <div class="code-line">
+                                <span class="yaml-key">tools</span><span class="yaml-colon">:</span>
+                                <span class="yaml-val-bracket">[</span><span class="yaml-val-str">Read</span><span class="yaml-colon">,</span> <span class="yaml-val-str">Grep</span><span class="yaml-colon">,</span> <span class="yaml-val-str">Glob</span><span class="yaml-colon">,</span> <span class="yaml-val-str">Agent</span><span class="yaml-val-bracket">]</span>
+                            </div>
+                            <div class="code-line"><span class="yaml-dash">---</span></div>
+                        </div>
+                    </div>
+                    <div class="diagram-s3">
+                        <div class="s3-tree-container">
+                            <div class="s3-level">
+                                <span class="s3-level-num">Level 1</span>
+                                <div class="s3-agent-node root">🤖 親セッション (Main Agent)</div>
+                            </div>
+                            <div class="s3-arrow-down">⬇️ 委譲 (`Agent`ツールが必要)</div>
+                            <div class="s3-level">
+                                <span class="s3-level-num">Level 2 - 4</span>
+                                <div class="s3-agent-node">🤖 サブエージェント (中間階層)</div>
+                            </div>
+                            <div class="s3-arrow-down">⬇️ 委譲</div>
+                            <div class="s3-level">
+                                <span class="s3-level-num">Level 5</span>
+                                <div class="s3-agent-node limit">
+                                    🤖 5階層目エージェント <span class="s3-limit-tag">限界 (LIMIT)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 4: DISALLOWED TOOLS ==================== -->
+        <div class="slide slide4 theme-blue" id="slide4">
+            <div class="title-area">
+                <h2><span class="title-badge">DISALLOWED TOOLS</span>ブラックリスト方式で危険をブロック</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">ブラックリスト(disallowedTools)の活用</div>
+                            <div class="point-desc">基本的には万能に動かしたいが、特定の危険な操作（Bashなどによるシェルアクセス）のみを禁止したい場合に有効です。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">「拒否リスト」が常に最優先</div>
+                            <div class="point-desc">`tools` (許可) と `disallowedTools` (拒否) の両方に同じツールが設定された場合、常に拒否リスト側が優先され実行できません。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">ワイルドカードによる一括拒否</div>
+                            <div class="point-desc">`disallowedTools: [mcp__*]` のように指定することで、外部のすべてのMCPサーバー連携を一括で禁止できます。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel right-panel-column">
+                    <div style="display: flex; gap: 1.5cqw; width: 100%;">
+                        <div class="yaml-card" style="flex: 1;">
+                            <div class="yaml-header">
+                                <div class="yaml-buttons">
+                                    <span class="yaml-btn red"></span>
+                                    <span class="yaml-btn yellow"></span>
+                                    <span class="yaml-btn green"></span>
+                                </div>
+                                <div class="yaml-title">no-bash.md</div>
+                                <div style="width: 16px;"></div>
+                            </div>
+                            <div class="yaml-content" style="padding: 1cqh 1.2cqw;">
+                                <div class="code-line"><span class="yaml-dash">---</span></div>
+                                <div class="code-line">
+                                    <span class="yaml-key">disallowedTools</span><span class="yaml-colon">:</span>
+                                </div>
+                                <div class="code-line">  <span class="yaml-val-bracket">[</span><span class="yaml-val-str">Bash</span><span class="yaml-val-bracket">]</span></div>
+                                <div class="code-line"><span class="yaml-dash">---</span></div>
+                            </div>
+                        </div>
+                        <div class="yaml-card" style="flex: 1;">
+                            <div class="yaml-header">
+                                <div class="yaml-buttons">
+                                    <span class="yaml-btn red"></span>
+                                    <span class="yaml-btn yellow"></span>
+                                    <span class="yaml-btn green"></span>
+                                </div>
+                                <div class="yaml-title">no-mcp.md</div>
+                                <div style="width: 16px;"></div>
+                            </div>
+                            <div class="yaml-content" style="padding: 1cqh 1.2cqw;">
+                                <div class="code-line"><span class="yaml-dash">---</span></div>
+                                <div class="code-line">
+                                    <span class="yaml-key">disallowedTools</span><span class="yaml-colon">:</span>
+                                </div>
+                                <div class="code-line">  <span class="yaml-val-bracket">[</span><span class="yaml-val-str">mcp__*</span><span class="yaml-val-bracket">]</span></div>
+                                <div class="code-line"><span class="yaml-dash">---</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="diagram-s4">
+                        <div class="s4-flow-step">
+                            <span class="s4-step-num">1</span>
+                            <div class="s4-step-content">
+                                <span class="s4-step-label">ツール実行要求</span>
+                                <span class="s4-step-details">Read, Bash, mcp__search</span>
+                            </div>
+                        </div>
+                        <div class="s4-flow-arrow" style="margin-left: 2cqw; font-size: 0.9cqw; margin-top: 0.2cqh; margin-bottom: 0.2cqh;">⬇️ フィルターチェック</div>
+                        <div class="s4-flow-step">
+                            <span class="s4-step-num">2</span>
+                            <div class="s4-step-content active-deny">
+                                <span class="s4-step-label">🚫 disallowedTools 評価 (優先)</span>
+                                <span class="s4-step-details">Bash, mcp__* をここで拒否</span>
+                            </div>
+                        </div>
+                        <div class="s4-flow-arrow" style="margin-left: 2cqw; font-size: 0.9cqw; margin-top: 0.2cqh; margin-bottom: 0.2cqh;">⬇️ パスしたツールのみ</div>
+                        <div class="s4-flow-step">
+                            <span class="s4-step-num">3</span>
+                            <div class="s4-step-content active-allow">
+                                <span class="s4-step-label">🔑 tools 評価 (許可リスト)</span>
+                                <span class="s4-step-details">Read 実行成功！</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 5: PERMISSION MODES ==================== -->
+        <div class="slide slide5 theme-blue" id="slide5">
+            <div class="title-area">
+                <h2><span class="title-badge">PERMISSION MODE</span>承認プロセスを制御する4つのモード</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">承認ポリシーの設定</div>
+                            <div class="point-desc">サブエージェントが動作する際、どのような場合にユーザーに確認ダイアログを表示するかを4つのモードから指定します。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">利便性と安全性のコントロール</div>
+                            <div class="point-desc">ファイルの編集操作を自動承認にする (`acceptEdits`) か、都度確認を求める (`default`) か等を用途に応じて切り替えます。</div>
+                        </li>
+                        <li>
+                            <div class="point-title"> bypassPermissions の危険性</div>
+                            <div class="point-desc">確認なしで全ツールを実行できます。非常に危険なため、コンテナなどの隔離環境以外での利用は非推奨です。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s5">
+                        <div class="s5-mode-card">
+                            <div class="s5-mode-header">
+                                👤 default
+                                <span class="s5-mode-badge yellow">標準</span>
+                            </div>
+                            <p class="s5-mode-desc">確認が必要なツールの実行時、毎回ユーザーに承認を求めます。</p>
+                        </div>
+                        <div class="s5-mode-card">
+                            <div class="s5-mode-header">
+                                ✍️ acceptEdits
+                                <span class="s5-mode-badge green">開発推進</span>
+                            </div>
+                            <p class="s5-mode-desc">ファイルの編集・書き込み操作（Edit, Write）を自動的に承認します。</p>
+                        </div>
+                        <div class="s5-mode-card">
+                            <div class="s5-mode-header">
+                                🚫 dontAsk
+                                <span class="s5-mode-badge red">自動拒否</span>
+                            </div>
+                            <p class="s5-mode-desc">確認が必要なツール実行を自動拒否します（許可されたツールのみ動作）。</p>
+                        </div>
+                        <div class="s5-mode-card danger">
+                            <div class="s5-mode-header">
+                                ⚠️ bypassPermissions
+                                <span class="s5-mode-badge red">危険</span>
+                            </div>
+                            <p class="s5-mode-desc">すべての権限チェックをスキップします（※コンテナなど隔離環境推奨）。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 6: SUMMARY ==================== -->
+        <div class="slide slide6 theme-yellow" id="slide6">
+            <div class="title-area">
+                <h2><span class="title-badge">SUMMARY</span>安全に使うための権限設計の鉄則</h2>
+            </div>
+            <div class="main-content">
+                <div class="left-panel">
+                    <ul class="points-list">
+                        <li>
+                            <div class="point-title">「最小権限の原則」を徹底する</div>
+                            <div class="point-desc">サブエージェントに渡す権限は、タスクに必要な「必要最低限」に絞り込むことがセキュリティの基本かつ鉄則です。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">自律動作の暴走を防ぐ</div>
+                            <div class="point-desc">親セッションから意図しないタイミングで起動された際にも、危険な破壊的操作が発生しないよう設定しておきます。</div>
+                        </li>
+                        <li>
+                            <div class="point-title">次回予告：モデル設定</div>
+                            <div class="point-desc">次の動画では、サブエージェントが使用する「AIモデルの設定（model）」について解説していきます。</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="right-panel">
+                    <div class="diagram-s6">
+                        <div class="s6-checklist-header">
+                            🛡️ サブエージェント安全運用のチェックリスト
+                        </div>
+                        <div class="s6-checklist-items">
+                            <div class="s6-item">
+                                <span class="s6-check-icon">✓</span>
+                                <span class="s6-item-text">目的（調査、修正）に合わせて tools の許可リストを明示する</span>
+                            </div>
+                            <div class="s6-item">
+                                <span class="s6-check-icon">✓</span>
+                                <span class="s6-item-text">任意のシステム操作を防ぐため、不要なら Bash は禁止する</span>
+                            </div>
+                            <div class="s6-item">
+                                <span class="s6-check-icon">✓</span>
+                                <span class="s6-item-text">意図しない外部連携を防ぐため、不要な MCPツールは遮断する</span>
+                            </div>
+                            <div class="s6-item">
+                                <span class="s6-check-icon">✓</span>
+                                <span class="s6-item-text">隔離環境（コンテナ）以外では bypassPermissions は使用しない</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ==================== 共通ナビゲーションUI ==================== -->
+    <div class="nav-info">
+        <div class="slide-counter" id="counter">1 / 6</div>
+    </div>
+
+    <!-- JavaScript for Slideshow Control -->
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 6;
+
+        function showSlide(slideNumber) {
+            // 現在のアクティブスライドを非表示
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+
+            // 新しいスライドを表示
+            document.getElementById(`slide${slideNumber}`).classList.add('active');
+            
+            // カウンターテキストの更新
+            const counterEl = document.getElementById('counter');
+            counterEl.innerText = `${slideNumber} / ${totalSlides}`;
+            currentSlide = slideNumber;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        function firstSlide() {
+            showSlide(1);
+        }
+
+        function lastSlide() {
+            showSlide(totalSlides);
+        }
+
+        document.addEventListener('keydown', function(event) {
+            // 入力中などの場合はイベントをスルー
+            if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            switch(event.key) {
+                case 'ArrowRight':
+                case ' ':
+                    event.preventDefault();
+                    nextSlide();
+                    break;
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    prevSlide();
+                    break;
+                case 'Home':
+                    event.preventDefault();
+                    firstSlide();
+                    break;
+                case 'End':
+                    event.preventDefault();
+                    lastSlide();
+                    break;
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                    event.preventDefault();
+                    const slideNum = parseInt(event.key);
+                    if (slideNum >= 1 && slideNum <= totalSlides) {
+                        showSlide(slideNum);
+                    }
+                    break;
+            }
+        });
+
+        // 初期ロード時に1ページ目を表示
+        showSlide(1);
+    </script>
+</body>
+</html>
